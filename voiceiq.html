@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceIQ — AI Phone Agent · PaddhuLabs</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FFFFFF;--bg2:#F9F5FF;--bg3:#F3ECFF;
+  --purple:#8B21E8;--violet:#6D18B8;--pink:#C2186F;--indigo:#4B50E0;
+  --purple-lt:#A855F7;--purple-pale:rgba(139,33,232,0.08);
+  --text:#1A0A2E;--text2:#4A3865;--text3:#8A75AA;
+  --border:rgba(139,33,232,0.15);--border2:rgba(139,33,232,0.08);
+  --shadow:rgba(139,33,232,0.12);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;overflow-x:hidden;cursor:none}
+
+#cursor{position:fixed;width:10px;height:10px;background:var(--purple);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 20px var(--purple),0 0 40px rgba(139,33,232,0.3)}
+#cursor-ring{position:fixed;width:40px;height:40px;border:1.5px solid rgba(139,33,232,0.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform 0.15s,width 0.3s,height 0.3s}
+
+/* Very subtle background canvas */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.08}
+.overlay{position:fixed;inset:0;background:
+  radial-gradient(ellipse at 0% 0%,rgba(139,33,232,0.06) 0%,transparent 50%),
+  radial-gradient(ellipse at 100% 100%,rgba(194,24,111,0.04) 0%,transparent 50%);
+  pointer-events:none;z-index:1}
+.content{position:relative;z-index:2}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 52px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.9);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--border2);box-shadow:0 1px 0 rgba(139,33,232,0.06)}
+.nav-back{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text3);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;transition:color 0.2s}
+.nav-back:hover{color:var(--purple)}
+.nav-back svg{width:16px;height:16px;transition:transform 0.2s}
+.nav-back:hover svg{transform:translateX(-3px)}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.brand-logo{width:32px;height:32px;border:1.5px solid var(--purple);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(139,33,232,0.15),inset 0 0 8px rgba(139,33,232,0.05)}
+.brand-logo::before{content:'';width:10px;height:10px;background:var(--purple);border-radius:2px;box-shadow:0 0 12px var(--purple)}
+.brand-name{font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text)}
+.brand-sub{font-size:8px;color:var(--purple);letter-spacing:0.2em;text-transform:uppercase;margin-top:1px}
+.nav-market{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--purple);letter-spacing:0.1em;text-transform:uppercase;border:1.5px solid var(--border);padding:6px 14px;border-radius:100px;background:var(--purple-pale);font-weight:700}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:140px 52px 100px;max-width:1400px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:10px;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--purple);border:1.5px solid var(--border);border-radius:100px;padding:7px 18px;margin-bottom:40px;animation:fadeUp 0.8s ease 0.1s both;background:var(--purple-pale);font-weight:700}
+.hero-tag-dot{width:6px;height:6px;background:var(--purple);border-radius:50%;animation:blink 1.5s infinite;box-shadow:0 0 8px var(--purple)}
+.hero-title{font-size:clamp(56px,7.5vw,108px);font-weight:900;line-height:0.9;letter-spacing:-0.04em;margin-bottom:36px;animation:fadeUp 0.8s ease 0.2s both}
+.hero-title .voice{display:block;background:linear-gradient(100deg,var(--purple) 0%,var(--pink) 50%,var(--indigo) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 2px 20px rgba(139,33,232,0.25))}
+.hero-title .iq{display:block;color:var(--text)}
+.hero-sub{font-size:17px;color:var(--text2);max-width:640px;line-height:1.8;margin-bottom:52px;animation:fadeUp 0.8s ease 0.35s both;font-weight:400}
+.hero-cta{display:flex;gap:14px;margin-bottom:80px;animation:fadeUp 0.8s ease 0.45s both;flex-wrap:wrap}
+.btn-primary{padding:14px 34px;background:linear-gradient(135deg,var(--purple),var(--violet));color:#fff;font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border-radius:10px;transition:all 0.3s;box-shadow:0 4px 24px rgba(139,33,232,0.3)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(139,33,232,0.4)}
+.btn-outline{padding:14px 34px;background:white;color:var(--purple);font-weight:700;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1.5px solid var(--border);border-radius:10px;transition:all 0.3s}
+.btn-outline:hover{background:var(--purple-pale);transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow)}
+.metrics-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border2);border-radius:16px;overflow:hidden;width:100%;animation:fadeUp 0.8s ease 0.6s both;box-shadow:0 4px 32px var(--shadow);border:1px solid var(--border2)}
+.metric-block{background:white;padding:24px 20px;text-align:center}
+.metric-val{font-size:26px;font-weight:900;letter-spacing:-0.03em;color:var(--purple)}
+.metric-lbl{font-size:8px;color:var(--text3);letter-spacing:0.18em;text-transform:uppercase;margin-top:5px;font-weight:600}
+
+/* Section */
+.section{padding:100px 52px;max-width:1400px;margin:0 auto}
+.sec-kicker{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-kicker::after{content:'';height:1px;background:linear-gradient(to right,var(--border),transparent);flex:1;max-width:80px}
+.sec-h2{font-size:clamp(32px,4vw,52px);font-weight:900;letter-spacing:-0.03em;line-height:1.05;margin-bottom:14px;color:var(--text)}
+.sec-sub{font-size:15px;color:var(--text2);line-height:1.8;max-width:580px;margin-bottom:60px}
+
+/* Layers — bright version */
+.layers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.layer{padding:32px;background:white;border-radius:16px;border:1px solid var(--border2);box-shadow:0 4px 24px rgba(139,33,232,0.06)}
+.layer-title{font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-weight:800;margin-bottom:24px}
+.agent-row{display:flex;flex-direction:column;gap:8px}
+.agent-item{display:flex;gap:14px;padding:14px;background:var(--bg2);border-left:3px solid var(--agent-color,var(--purple));border-radius:0 8px 8px 0;transition:background 0.2s}
+.agent-item:hover{background:var(--bg3)}
+.agent-item-num{font-size:10px;color:var(--text3);font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;padding-top:2px}
+.agent-item-name{font-size:13px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.agent-item-sub{font-size:11px;color:var(--text2);line-height:1.55}
+
+/* Supervisor bar */
+.supervisor-bar{background:linear-gradient(135deg,var(--purple-pale),rgba(194,24,111,0.04));border:1.5px solid var(--border);border-radius:16px;padding:28px 36px;display:flex;align-items:center;gap:20px;margin-top:0;box-shadow:0 4px 24px var(--shadow)}
+
+/* Agent cards */
+.agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.agent-card{background:white;padding:32px;position:relative;overflow:hidden;transition:all 0.3s;border:1px solid var(--border2);border-radius:16px;box-shadow:0 2px 16px rgba(139,33,232,0.04)}
+.agent-card:hover{border-color:var(--border);box-shadow:0 8px 32px var(--shadow);transform:translateY(-3px)}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--purple),var(--pink));transform:scaleX(0);transform-origin:left;transition:transform 0.4s;border-radius:16px 16px 0 0}
+.agent-card:hover::before{transform:scaleX(1)}
+.agent-num{font-size:11px;font-weight:700;color:var(--purple);letter-spacing:0.15em;margin-bottom:12px}
+.agent-name{font-size:17px;font-weight:800;margin-bottom:8px;letter-spacing:-0.01em;color:var(--text)}
+.agent-role{font-size:11px;color:var(--purple);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;font-weight:700}
+.agent-desc{font-size:12.5px;color:var(--text2);line-height:1.65}
+.agent-tech{display:flex;flex-wrap:wrap;gap:5px;margin-top:16px}
+.tech-tag{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;background:var(--purple-pale);border:1px solid var(--border);border-radius:6px;color:var(--purple);font-weight:600}
+
+/* Pricing */
+.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.price-card{padding:32px 24px;background:white;border:1.5px solid var(--border2);border-radius:16px;transition:all 0.3s;position:relative;box-shadow:0 2px 16px rgba(139,33,232,0.04)}
+.price-card:hover{border-color:var(--border);transform:translateY(-6px);box-shadow:0 20px 60px var(--shadow)}
+.price-card.featured{border-color:var(--border);background:linear-gradient(160deg,white,var(--bg2));box-shadow:0 8px 40px var(--shadow)}
+.price-badge{position:absolute;top:16px;right:16px;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:white;background:var(--purple);padding:4px 10px;border-radius:6px;font-weight:700}
+.price-tier{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-weight:600}
+.price-name{font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.01em;color:var(--text)}
+.price-val{font-size:34px;font-weight:900;letter-spacing:-0.04em;color:var(--purple);margin-bottom:4px}
+.price-period{font-size:11px;color:var(--text3);margin-bottom:24px}
+.price-features{display:flex;flex-direction:column;gap:10px}
+.price-feat{font-size:12px;color:var(--text2);padding-left:16px;position:relative;line-height:1.5}
+.price-feat::before{content:'›';position:absolute;left:0;color:var(--purple);font-weight:800;font-size:14px;line-height:1.2}
+
+/* Phase roadmap */
+.phase-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.phase-col{background:white;padding:28px 24px;border-top:3px solid transparent;transition:all 0.3s;border-radius:12px;border:1px solid var(--border2);box-shadow:0 2px 12px rgba(139,33,232,0.04)}
+.phase-col:hover{box-shadow:0 8px 32px var(--shadow);border-color:var(--border);transform:translateY(-3px)}
+.phase-num-tag{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:8px}
+.phase-name{font-size:13px;font-weight:800;margin-bottom:10px;letter-spacing:-0.01em;color:var(--text)}
+.phase-period{font-size:10px;color:var(--text3);margin-bottom:16px;letter-spacing:0.05em;font-weight:500}
+.phase-items{display:flex;flex-direction:column;gap:6px}
+.phase-item-text{font-size:11px;color:var(--text2);padding-left:12px;position:relative;line-height:1.5}
+.phase-item-text::before{content:'·';position:absolute;left:0;color:var(--purple);font-weight:700}
+
+/* Competition table */
+.comp-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.comp-table th{text-align:left;padding:12px 16px;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);border-bottom:2px solid var(--border2);font-weight:700;background:var(--bg2)}
+.comp-table td{padding:14px 16px;border-bottom:1px solid var(--border2);color:var(--text2);vertical-align:top}
+.comp-table tr:hover td{background:var(--bg2)}
+.comp-table .highlight-row td{background:var(--purple-pale)}
+.comp-name{font-weight:700;color:var(--text)}
+.comp-edge{color:var(--violet);font-weight:600}
+.comp-yours{font-weight:900;color:var(--purple)}
+
+/* Financials */
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.fin-card{background:white;border:1px solid var(--border2);border-radius:16px;padding:32px;box-shadow:0 4px 24px rgba(139,33,232,0.04)}
+.fin-table{width:100%;border-collapse:collapse;font-size:12px}
+.fin-table th{text-align:left;padding:10px 0;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2);font-weight:700}
+.fin-table td{padding:10px 0;border-bottom:1px solid var(--border2);color:var(--text2)}
+.fin-table td:last-child{text-align:right;color:var(--purple);font-weight:700}
+.fin-table tr:hover td{color:var(--text)}
+
+/* Section divider */
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 52px}
+
+/* Footer */
+footer{padding:56px 52px;border-top:1px solid var(--border2);background:var(--bg2)}
+.footer-inner{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.footer-brand{font-size:20px;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px;color:var(--text)}
+.footer-sub{font-size:12px;color:var(--text3)}
+.footer-links{display:flex;gap:10px}
+.footer-link{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);text-decoration:none;padding:8px 16px;border:1.5px solid var(--border2);border-radius:8px;transition:all 0.2s;font-weight:600;background:white}
+.footer-link:hover{color:var(--purple);border-color:var(--border);box-shadow:0 4px 16px var(--shadow)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.reveal{opacity:0;transform:translateY(36px);transition:opacity 0.75s ease,transform 0.75s ease}
+.reveal.visible{opacity:1;transform:none}
+
+@media(max-width:1200px){.pricing-grid{grid-template-columns:repeat(2,1fr)}.phase-grid{grid-template-columns:repeat(3,1fr)}.layers{grid-template-columns:1fr}}
+@media(max-width:900px){.agent-grid{grid-template-columns:1fr}.metrics-bar{grid-template-columns:repeat(3,1fr)}.fin-grid{grid-template-columns:1fr}}
+@media(max-width:768px){nav{padding:16px 24px}.hero{padding:120px 24px 80px}.section{padding:72px 24px}.phase-grid{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr}.footer-inner{flex-direction:column;gap:24px;align-items:flex-start}.section-divider{margin:0 24px}body{cursor:auto}#cursor,#cursor-ring{display:none}}
+</style>
+</head>
+<body>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="overlay"></div>
+<div class="content">
+
+<!-- Nav -->
+<nav>
+  <a href="index.html" class="nav-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    PaddhuLabs
+  </a>
+  <div class="nav-brand">
+    <div class="brand-logo"></div>
+    <div>
+      <div class="brand-name">VoiceIQ</div>
+      <div class="brand-sub">AI Phone Agent</div>
+    </div>
+  </div>
+  <div class="nav-market">$3.2B → $16.8B by 2030</div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-tag"><div class="hero-tag-dot"></div>13 Agents · 48-Hour Deploy · 95% Cost Reduction</div>
+  <h1 class="hero-title">
+    <span class="voice">Voice</span>
+    <span class="iq">IQ</span>
+  </h1>
+  <p class="hero-sub">Turnkey AI phone agent with genuine human voice, real-time emotion detection, and de-escalation intelligence. Plug-and-play ServiceNow, Salesforce, and Google Calendar. Deploy in 48 hours — not 6 months. SMBs pay $199/mo. Call centers pay $2,500+/mo.</p>
+  <div class="hero-cta">
+    <a href="#agents" class="btn-primary">Explore 13 Agents</a>
+    <a href="#compete" class="btn-outline">Competitive Moat</a>
+  </div>
+  <div class="metrics-bar">
+    <div class="metric-block"><div class="metric-val">13</div><div class="metric-lbl">AI Agents</div></div>
+    <div class="metric-block"><div class="metric-val">$16.8B</div><div class="metric-lbl">2030 Market</div></div>
+    <div class="metric-block"><div class="metric-val">95%</div><div class="metric-lbl">Cost Savings</div></div>
+    <div class="metric-block"><div class="metric-val">48h</div><div class="metric-lbl">Deploy Time</div></div>
+    <div class="metric-block"><div class="metric-val">$50K</div><div class="metric-lbl">MRR Target Y2</div></div>
+  </div>
+</div>
+
+<!-- Agent Architecture Overview -->
+<section id="agents" class="section">
+  <div class="sec-kicker reveal">// 01 · Three-Layer Architecture</div>
+  <h2 class="sec-h2 reveal">Perception. Cognition.<br>Action. 13 Agents.</h2>
+  <p class="sec-sub reveal">The Supervisor Agent orchestrates three specialized layers — each agent is a LangGraph node connected by typed state edges. The entire system runs inside a single real-time call session with sub-500ms response latency.</p>
+
+  <div class="layers reveal">
+    <div class="layer" style="border-top:3px solid var(--purple)">
+      <div class="layer-title" style="color:var(--purple)">⟨ Perception Layer ⟩</div>
+      <div class="agent-row">
+        <div class="agent-item" style="--agent-color:var(--purple)">
+          <div class="agent-item-num">01</div>
+          <div><div class="agent-item-name">Telephony Gateway</div><div class="agent-item-sub">Owns PSTN/SIP layer. Twilio WebSocket Media Streams. Manages call state machine end-to-end.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:#7C3AED">
+          <div class="agent-item-num">02</div>
+          <div><div class="agent-item-name">VAD Agent</div><div class="agent-item-sub">Silero VAD detecting speech in 20ms windows. Enables barge-in. Filters noise and silence.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:var(--indigo)">
+          <div class="agent-item-num">03</div>
+          <div><div class="agent-item-name">STT Agent</div><div class="agent-item-sub">Deepgram Nova-2 phonecall model. Streams partial transcripts in real time for speculative processing.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:var(--pink)">
+          <div class="agent-item-num">04</div>
+          <div><div class="agent-item-name">Emotion Agent</div><div class="agent-item-sub">Hume AI streaming. Per-utterance emotion vector: anger, distress, frustration, satisfaction.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="layer" style="border-top:3px solid var(--pink)">
+      <div class="layer-title" style="color:var(--pink)">⟨ Cognition Layer ⟩</div>
+      <div class="agent-row">
+        <div class="agent-item" style="--agent-color:var(--pink)">
+          <div class="agent-item-num">05</div>
+          <div><div class="agent-item-name">Intent Agent</div><div class="agent-item-sub">GPT-4o function call classifying intent taxonomy per tenant. Detects sub-intents: ticket, callback, booking.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:#DB2777">
+          <div class="agent-item-num">06</div>
+          <div><div class="agent-item-name">RAG Agent</div><div class="agent-item-sub">Pinecone hybrid search + Cohere Rerank. Confidence gating: score &lt;0.65 triggers fallback protocol.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:#9333EA">
+          <div class="agent-item-num">07</div>
+          <div><div class="agent-item-name">Response Agent</div><div class="agent-item-sub">GPT-4o streaming. 4-layer system prompt: Persona → Tone → De-escalation → Tool Use. Emotion-adaptive.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:#7C3AED">
+          <div class="agent-item-num">08</div>
+          <div><div class="agent-item-name">Memory Agent</div><div class="agent-item-sub">Redis active session + PostgreSQL history. Returning caller identification by phone number.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="layer" style="border-top:3px solid var(--indigo)">
+      <div class="layer-title" style="color:var(--indigo)">⟨ Action Layer ⟩</div>
+      <div class="agent-row">
+        <div class="agent-item" style="--agent-color:var(--indigo)">
+          <div class="agent-item-num">09</div>
+          <div><div class="agent-item-name">De-escalation Agent</div><div class="agent-item-sub">Activates at anger &gt;0.75 for 2+ turns. 5-step de-escalation sequence. Warm transfer fallback.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:#4F46E5">
+          <div class="agent-item-num">10</div>
+          <div><div class="agent-item-name">Tool Agent</div><div class="agent-item-sub">Async Celery tasks. ServiceNow, Salesforce, SendGrid, Google Calendar — all without pausing voice.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:#7C3AED">
+          <div class="agent-item-num">11</div>
+          <div><div class="agent-item-name">TTS Agent</div><div class="agent-item-sub">ElevenLabs Turbo v2.5 streaming. Emotion-adaptive prosody. Barge-in abort in milliseconds.</div></div>
+        </div>
+        <div class="agent-item" style="--agent-color:var(--indigo)">
+          <div class="agent-item-num">12</div>
+          <div><div class="agent-item-name">QA Agent</div><div class="agent-item-sub">Post-call analysis on transcript. Scores resolution, sentiment trajectory, de-escalation effectiveness.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supervisor -->
+  <div class="supervisor-bar">
+    <div style="font-size:28px">🎛️</div>
+    <div style="flex:1">
+      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--purple);margin-bottom:4px;font-weight:700">Agent 13 · Orchestrator</div>
+      <div style="font-size:16px;font-weight:800;margin-bottom:6px;color:var(--text)">Supervisor Agent — The Call Conductor</div>
+      <div style="font-size:13px;color:var(--text2)">LangGraph StateGraph conductor managing all 12 agents. Routes outputs via typed edges, monitors health, triggers fallbacks, enforces tenant policies. Makes human transfer decisions at anger &gt;0.8 sustained for 2+ turns.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
+      <span style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;background:var(--purple-pale);border:1.5px solid var(--border);border-radius:6px;color:var(--purple);font-weight:700">LangGraph</span>
+      <span style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;background:var(--purple-pale);border:1.5px solid var(--border);border-radius:6px;color:var(--purple);font-weight:700">StateGraph</span>
+      <span style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;background:var(--purple-pale);border:1.5px solid var(--border);border-radius:6px;color:var(--purple);font-weight:700">Real-time</span>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Competition -->
+<section id="compete" class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 02 · Competitive Position</div>
+  <h2 class="sec-h2 reveal">The Unoccupied<br>Market Position</h2>
+  <p class="sec-sub reveal">Bland AI, Retell AI, and Vapi are all developer-infrastructure tools. No player owns the turnkey vertical solution with emotion intelligence, built-in de-escalation, and 48-hour deployment.</p>
+  <div style="overflow-x:auto;border-radius:16px;border:1px solid var(--border2);box-shadow:0 4px 24px rgba(139,33,232,0.06)" class="reveal">
+    <table class="comp-table">
+      <thead>
+        <tr><th>Company</th><th>Model</th><th>Pricing</th><th>Critical Weakness</th><th>VoiceIQ Edge</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="comp-name">Bland AI</span></td><td>Developer API</td><td>$0.09/min</td><td>No turnkey dashboard. No emotion layer.</td><td class="comp-edge">SMB-ready onboarding + emotion de-escalation</td></tr>
+        <tr><td><span class="comp-name">Retell AI</span></td><td>API platform</td><td>$0.07–0.11/min</td><td>No knowledge base UI. No de-escalation.</td><td class="comp-edge">Full product with KB manager + emotion intelligence</td></tr>
+        <tr><td><span class="comp-name">Vapi.ai</span></td><td>Infra layer</td><td>$0.05–0.10/min</td><td>Customer must build on top. Not a product.</td><td class="comp-edge">We are the finished product above Vapi's layer</td></tr>
+        <tr><td><span class="comp-name">Synthflow</span></td><td>No-code builder</td><td>$29–900/mo</td><td>European focus. Weak English quality.</td><td class="comp-edge">Better voice, US-first GTM, deeper integration stack</td></tr>
+        <tr><td><span class="comp-name">LivePerson</span></td><td>Enterprise SLA</td><td>$100+/seat</td><td>Legacy infra. Slow AI integration.</td><td class="comp-edge">10x faster deploy, modern stack, fraction of cost</td></tr>
+        <tr class="highlight-row"><td><span class="comp-yours">VoiceIQ</span></td><td>Turnkey Vertical</td><td>$199–6,000/mo</td><td>—</td><td class="comp-edge">Emotion + de-escalation + zero-code + 48h deploy</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Pricing -->
+<section id="pricing" class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 03 · Pricing Model</div>
+  <h2 class="sec-h2 reveal">SMB to Enterprise.<br>Same Platform.</h2>
+  <p class="sec-sub reveal">Phase 1 targets SMBs with credit-card pricing. Phase 4 walks into mid-market call centers with case studies and SOC 2 certification. The product evolves, the platform stays the same.</p>
+  <div class="pricing-grid reveal">
+    <div class="price-card">
+      <div class="price-tier">SMB Entry</div>
+      <div class="price-name">Starter</div>
+      <div class="price-val">$199</div>
+      <div class="price-period">/ month</div>
+      <div class="price-features">
+        <div class="price-feat">1 AI agent number</div>
+        <div class="price-feat">500 minutes / month</div>
+        <div class="price-feat">Google Calendar booking</div>
+        <div class="price-feat">Basic KB management</div>
+        <div class="price-feat">Post-call email summaries</div>
+      </div>
+    </div>
+    <div class="price-card featured">
+      <div class="price-badge">Most Popular</div>
+      <div class="price-tier">SMB Growth</div>
+      <div class="price-name">Professional</div>
+      <div class="price-val">$499</div>
+      <div class="price-period">/ month</div>
+      <div class="price-features">
+        <div class="price-feat">3 AI agent numbers</div>
+        <div class="price-feat">2,000 minutes / month</div>
+        <div class="price-feat">HubSpot CRM integration</div>
+        <div class="price-feat">ServiceNow ticketing</div>
+        <div class="price-feat">Emotion analytics dashboard</div>
+        <div class="price-feat">Custom voice persona</div>
+      </div>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Mid-Market</div>
+      <div class="price-name">Growth</div>
+      <div class="price-val">$2,499</div>
+      <div class="price-period">/ month</div>
+      <div class="price-features">
+        <div class="price-feat">Up to 100 concurrent calls</div>
+        <div class="price-feat">Salesforce + ServiceNow</div>
+        <div class="price-feat">Supervisor real-time dashboard</div>
+        <div class="price-feat">Warm transfer to human agents</div>
+        <div class="price-feat">Multi-language support</div>
+        <div class="price-feat">SLA 99.5% uptime</div>
+      </div>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Enterprise</div>
+      <div class="price-name">Call Center</div>
+      <div class="price-val">$6,000+</div>
+      <div class="price-period">/ month · custom</div>
+      <div class="price-features">
+        <div class="price-feat">500+ concurrent calls</div>
+        <div class="price-feat">SIP trunking (Avaya/Cisco/Genesys)</div>
+        <div class="price-feat">White-label reseller option</div>
+        <div class="price-feat">SOC 2 Type II certified</div>
+        <div class="price-feat">Dedicated account management</div>
+        <div class="price-feat">Custom integrations + API access</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Roadmap -->
+<section class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 04 · Phased Roadmap</div>
+  <h2 class="sec-h2 reveal">Bootstrap → $50K MRR<br>in 24 Months</h2>
+  <p class="sec-sub reveal">Mornings only. Solo execution. Phase 0 starts on Vapi.ai to ship in 6 weeks. Phase 3 rebuilds natively when revenue funds it. Classic bootstrap strategy.</p>
+  <div class="phase-grid reveal">
+    <div class="phase-col" style="border-top:3px solid var(--text3)">
+      <div class="phase-num-tag">Phase 0</div>
+      <div class="phase-name">Legal &amp; Foundation</div>
+      <div class="phase-period">Weeks 1–2</div>
+      <div class="phase-items">
+        <div class="phase-item-text">Register Indian Pvt Ltd</div>
+        <div class="phase-item-text">IP Assignment Agreement</div>
+        <div class="phase-item-text">GitHub org setup</div>
+        <div class="phase-item-text">Domain + ToS + Privacy Policy</div>
+        <div class="phase-item-text">Vapi + Twilio + ElevenLabs accounts</div>
+      </div>
+    </div>
+    <div class="phase-col" style="border-top:3px solid var(--purple)">
+      <div class="phase-num-tag">Phase 1</div>
+      <div class="phase-name">MVP on Vapi</div>
+      <div class="phase-period">Weeks 3–8</div>
+      <div class="phase-items">
+        <div class="phase-item-text">Vapi voice pipeline</div>
+        <div class="phase-item-text">Hume AI emotion detection</div>
+        <div class="phase-item-text">RAG: FastAPI + Pinecone</div>
+        <div class="phase-item-text">Google Calendar booking</div>
+        <div class="phase-item-text">SendGrid escalation emails</div>
+        <div class="phase-item-text">Admin UI: Next.js on Vercel</div>
+      </div>
+    </div>
+    <div class="phase-col" style="border-top:3px solid var(--pink)">
+      <div class="phase-num-tag">Phase 2</div>
+      <div class="phase-name">First Revenue</div>
+      <div class="phase-period">Weeks 9–16</div>
+      <div class="phase-items">
+        <div class="phase-item-text">5 SMB clients @ $199–499/mo</div>
+        <div class="phase-item-text">ServiceNow integration</div>
+        <div class="phase-item-text">HubSpot CRM</div>
+        <div class="phase-item-text">Multi-tenant portal</div>
+        <div class="phase-item-text">Custom voice personas</div>
+        <div class="phase-item-text">Stripe usage metering</div>
+      </div>
+    </div>
+    <div class="phase-col" style="border-top:3px solid var(--indigo)">
+      <div class="phase-num-tag">Phase 3</div>
+      <div class="phase-name">Native Rebuild</div>
+      <div class="phase-period">Months 5–8</div>
+      <div class="phase-items">
+        <div class="phase-item-text">Triggered at $3K MRR</div>
+        <div class="phase-item-text">Twilio Media Streams native</div>
+        <div class="phase-item-text">Silero VAD barge-in</div>
+        <div class="phase-item-text">LangGraph state machine</div>
+        <div class="phase-item-text">Hume AI streaming (native)</div>
+        <div class="phase-item-text">AWS ECS Fargate migration</div>
+      </div>
+    </div>
+    <div class="phase-col" style="border-top:3px solid var(--violet)">
+      <div class="phase-num-tag">Phase 4–5</div>
+      <div class="phase-name">Mid-Market Scale</div>
+      <div class="phase-period">Months 9–24</div>
+      <div class="phase-items">
+        <div class="phase-item-text">$8K–10K MRR triggers Phase 4</div>
+        <div class="phase-item-text">SOC 2 Type I audit</div>
+        <div class="phase-item-text">SIP trunking certification</div>
+        <div class="phase-item-text">Enterprise SSO (SAML)</div>
+        <div class="phase-item-text">White-label for BPOs</div>
+        <div class="phase-item-text">$50K MRR target</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Financials -->
+<section class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 05 · Financial Projections</div>
+  <h2 class="sec-h2 reveal">$50K MRR → $600K ARR<br>Series A Ready</h2>
+  <div class="fin-grid reveal">
+    <div class="fin-card">
+      <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:20px;font-weight:700">Growth Trajectory</div>
+      <table class="fin-table">
+        <thead><tr><th>Period</th><th>Clients</th><th>MRR Target</th></tr></thead>
+        <tbody>
+          <tr><td>Month 1–3</td><td>0 (building)</td><td>$0</td></tr>
+          <tr><td>Month 4–6</td><td>5–8 SMBs</td><td>$1,500</td></tr>
+          <tr><td>Month 7–9</td><td>15 SMBs</td><td>$4,000</td></tr>
+          <tr><td>Month 10–12</td><td>25 clients</td><td>$8,000</td></tr>
+          <tr><td>Month 13–18</td><td>35 (mixed)</td><td>$20,000</td></tr>
+          <tr><td>Month 19–24</td><td>50 clients</td><td>$50,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="fin-card">
+      <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:20px;font-weight:700">Infrastructure Cost</div>
+      <table class="fin-table">
+        <thead><tr><th>Phase</th><th>Monthly Infra</th><th>Gross Margin</th></tr></thead>
+        <tbody>
+          <tr><td>Phase 1 (Vapi)</td><td>~$50</td><td>80%</td></tr>
+          <tr><td>Phase 2 (5+ clients)</td><td>~$300</td><td>80%</td></tr>
+          <tr><td>Phase 3 (native)</td><td>~$700</td><td>83%</td></tr>
+          <tr><td>Phase 4 (10–25 clients)</td><td>~$1,200</td><td>85%</td></tr>
+          <tr><td>Phase 5 (35+ clients)</td><td>~$2,500</td><td>88%</td></tr>
+          <tr><td>Scale (50+ clients)</td><td>~$6,000</td><td>88%</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:24px;padding:20px;background:var(--purple-pale);border:1.5px solid var(--border);border-radius:12px">
+        <div style="font-size:11px;color:var(--purple);font-weight:800;margin-bottom:6px;letter-spacing:0.05em">Series A Readiness</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">At $50K MRR (~$600K ARR), the business is fundable at $4M–$6M valuation (10–12x ARR). Earliest sensible point to raise if trajectory supports it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">VoiceIQ</div>
+      <div class="footer-sub">AI Phone Agent · Paddhu's Ventures Inc · Confidential</div>
+    </div>
+    <div class="footer-links">
+      <a href="index.html" class="footer-link">← PaddhuLabs Hub</a>
+      <a href="audit-platform.html" class="footer-link">Audit Platform</a>
+      <a href="trading-council.html" class="footer-link">Council OS →</a>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script>
+// Cursor
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let cx=0,cy=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;});
+(function ac(){rx+=(cx-rx)*0.1;ry+=(cy-ry)*0.1;cursor.style.left=cx+'px';cursor.style.top=cy+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ac);})();
+document.querySelectorAll('a,.agent-card,.price-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='60px';ring.style.height='60px';});
+  el.addEventListener('mouseleave',()=>{ring.style.width='40px';ring.style.height='40px';});
+});
+
+// Three.js — Very subtle bright background waves (white theme compatible)
+const canvas=document.getElementById('bg-canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,0.1,500);
+camera.position.set(0,0,32);
+
+function mkTex(c){
+  const cv=document.createElement('canvas');cv.width=cv.height=32;
+  const ctx=cv.getContext('2d');
+  const g=ctx.createRadialGradient(16,16,0,16,16,16);
+  g.addColorStop(0,c+'ff');g.addColorStop(0.4,c+'88');g.addColorStop(1,c+'00');
+  ctx.fillStyle=g;ctx.fillRect(0,0,32,32);
+  return new THREE.CanvasTexture(cv);
+}
+
+function createWave(count, amplitude, freq, zOffset, colorHex) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count*3);
+  const col = new Float32Array(count*3);
+  const c = new THREE.Color(colorHex);
+  for(let i=0;i<count;i++){
+    const i3=i*3;
+    const t=(i/count)*Math.PI*2*freq;
+    pos[i3] = (i/count)*80-40;
+    pos[i3+1] = Math.sin(t)*amplitude+(Math.random()-0.5)*amplitude*0.3;
+    pos[i3+2] = zOffset+(Math.random()-0.5)*2;
+    const fade = Math.abs(Math.sin(t*0.5));
+    col[i3]=c.r*fade;col[i3+1]=c.g*fade;col[i3+2]=c.b*fade;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const mat=new THREE.PointsMaterial({size:0.5,map:mkTex('#ffffff'),vertexColors:true,transparent:true,alphaMap:mkTex('#ffffff'),depthWrite:false,blending:THREE.AdditiveBlending});
+  return new THREE.Points(geo, mat);
+}
+
+const waves = [
+  createWave(2500, 6, 4, 0, '#A855F7'),
+  createWave(1500, 4, 6, -3, '#EC4899'),
+  createWave(1500, 5, 3, 3, '#7C3AED'),
+  createWave(1000, 3, 8, -6, '#6366F1'),
+];
+waves.forEach(w=>scene.add(w));
+
+let mx=0,my=0,tmx=0,tmy=0,scrollY=0;
+document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5);my=(e.clientY/window.innerHeight-.5);});
+window.addEventListener('scroll',()=>{scrollY=window.scrollY;});
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+
+const waveAttrs=waves.map(w=>w.geometry.getAttribute('position'));
+const clock=new THREE.Clock();
+(function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  tmx+=(mx-tmx)*0.04;tmy+=(my-tmy)*0.04;
+  const freqs=[4,6,3,8];
+  const amps=[6,4,5,3];
+  waves.forEach((wave,wi)=>{
+    const attr=waveAttrs[wi];
+    const count=attr.array.length/3;
+    for(let i=0;i<count;i++){
+      const tt=(i/count)*Math.PI*2*freqs[wi];
+      attr.array[i*3+1]=Math.sin(tt+t*(wi*0.2+0.5))*amps[wi]+(Math.random()-.5)*0.2;
+    }
+    attr.needsUpdate=true;
+    wave.rotation.x=tmy*0.05;
+  });
+  camera.position.x=tmx*5;
+  camera.position.y=-tmy*3+scrollY*0.004;
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+})();
+
+// Scroll reveal
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});},{threshold:0.07,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

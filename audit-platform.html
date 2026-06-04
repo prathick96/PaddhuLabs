@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous Audit Platform — AI Finance Intelligence · PaddhuLabs</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FFFDF8;--bg2:#FFFFFF;--bg3:#FFF8EE;
+  --yellow:#E8A900;--yellow-lt:#F7C948;--yellow-pale:rgba(247,201,72,0.12);
+  --orange:#E8620A;--orange-lt:#FF8C42;--orange-pale:rgba(255,140,66,0.1);
+  --orchid:#B5259A;--orchid-lt:#DA70D6;--orchid-pale:rgba(218,112,214,0.1);
+  --peach:#E8753A;--peach-lt:#FFB899;--peach-pale:rgba(255,184,153,0.15);
+  --green:#1A8C5A;--green-lt:#2EC27A;
+  --text:#1C1409;--text2:#4A3520;--text3:#8A7055;
+  --border:rgba(232,169,0,0.2);--border2:rgba(232,169,0,0.1);
+  --border-orchid:rgba(181,37,154,0.15);
+  --shadow-y:rgba(232,169,0,0.15);
+  --shadow-o:rgba(232,98,10,0.12);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;overflow-x:hidden;cursor:none}
+
+#cursor{position:fixed;width:10px;height:10px;background:var(--yellow-lt);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 20px var(--yellow-lt),0 0 40px rgba(247,201,72,0.4)}
+#cursor-ring{position:fixed;width:40px;height:40px;border:1.5px solid rgba(247,201,72,0.5);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform 0.15s,width 0.3s,height 0.3s}
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.06}
+.overlay{position:fixed;inset:0;background:
+  radial-gradient(ellipse at 5% 0%,rgba(247,201,72,0.1) 0%,transparent 50%),
+  radial-gradient(ellipse at 95% 10%,rgba(218,112,214,0.07) 0%,transparent 45%),
+  radial-gradient(ellipse at 50% 100%,rgba(255,140,66,0.06) 0%,transparent 50%);
+  pointer-events:none;z-index:1}
+.content{position:relative;z-index:2}
+
+/* Top accent bar */
+.top-accent{position:fixed;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--yellow-lt) 0%,var(--orange-lt) 35%,var(--orchid-lt) 65%,var(--peach-lt) 100%);z-index:200}
+
+/* Nav */
+nav{position:fixed;top:4px;left:0;right:0;z-index:100;padding:18px 52px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,253,248,0.92);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--border2);box-shadow:0 1px 0 rgba(232,169,0,0.06)}
+.nav-back{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text3);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;transition:color 0.2s}
+.nav-back:hover{color:var(--orange)}
+.nav-back svg{width:16px;height:16px;transition:transform 0.2s}
+.nav-back:hover svg{transform:translateX(-3px)}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.brand-logo{width:32px;height:32px;border:1.5px solid var(--yellow-lt);border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--yellow-pale);box-shadow:0 0 16px rgba(247,201,72,0.2)}
+.brand-logo::before{content:'';width:10px;height:10px;background:var(--yellow-lt);border-radius:2px;box-shadow:0 0 12px var(--yellow-lt)}
+.brand-name{font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text)}
+.brand-sub{font-size:8px;color:var(--yellow);letter-spacing:0.2em;text-transform:uppercase;margin-top:1px}
+.nav-status{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;border:1.5px solid rgba(26,140,90,0.2);padding:6px 14px;border-radius:100px;background:rgba(26,140,90,0.06);font-weight:700}
+.status-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 2s infinite;box-shadow:0 0 8px var(--green-lt)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:140px 52px 100px;max-width:1400px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:10px;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--yellow);border:1.5px solid var(--border);border-radius:100px;padding:7px 18px;margin-bottom:40px;animation:fadeUp 0.8s ease 0.1s both;background:var(--yellow-pale);font-weight:700}
+.hero-title{font-size:clamp(48px,6.5vw,96px);font-weight:900;line-height:0.95;letter-spacing:-0.04em;margin-bottom:32px;animation:fadeUp 0.8s ease 0.2s both}
+.hero-title .accent{background:linear-gradient(100deg,var(--yellow-lt) 0%,var(--orange-lt) 50%,var(--orchid-lt) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 2px 24px rgba(247,201,72,0.35))}
+.hero-sub{font-size:17px;color:var(--text2);max-width:620px;line-height:1.8;margin-bottom:56px;animation:fadeUp 0.8s ease 0.35s both}
+.hero-cta{display:flex;gap:14px;margin-bottom:80px;animation:fadeUp 0.8s ease 0.45s both;flex-wrap:wrap}
+.btn-primary{padding:14px 34px;background:linear-gradient(135deg,var(--yellow-lt),var(--yellow));color:#1C1409;font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border-radius:10px;transition:all 0.3s;box-shadow:0 4px 24px var(--shadow-y)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 48px var(--shadow-y)}
+.btn-orange{padding:14px 34px;background:linear-gradient(135deg,var(--orange-lt),var(--peach));color:white;font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border-radius:10px;transition:all 0.3s;box-shadow:0 4px 24px var(--shadow-o)}
+.btn-orange:hover{transform:translateY(-3px);box-shadow:0 16px 48px var(--shadow-o)}
+.btn-outline{padding:14px 34px;background:white;color:var(--orange);font-weight:700;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1.5px solid rgba(232,98,10,0.25);border-radius:10px;transition:all 0.3s}
+.btn-outline:hover{background:var(--orange-pale);transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow-o)}
+
+/* Metric bar */
+.metrics-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-radius:16px;overflow:hidden;width:100%;animation:fadeUp 0.8s ease 0.6s both;box-shadow:0 8px 40px var(--shadow-y);border:1.5px solid var(--border)}
+.metric-block{background:white;padding:24px 20px;text-align:center;position:relative}
+.metric-block::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:linear-gradient(90deg,transparent,var(--yellow-lt),transparent)}
+.metric-val{font-size:28px;font-weight:900;letter-spacing:-0.03em;margin-bottom:5px}
+.metric-lbl{font-size:8px;color:var(--text3);letter-spacing:0.18em;text-transform:uppercase;font-weight:600}
+
+/* Section */
+.section{padding:100px 52px;max-width:1400px;margin:0 auto}
+.sec-kicker{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--yellow);font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-kicker::after{content:'';height:1px;background:linear-gradient(to right,var(--border),transparent);flex:1;max-width:80px}
+.sec-h2{font-size:clamp(32px,4vw,52px);font-weight:900;letter-spacing:-0.03em;line-height:1.05;margin-bottom:14px;color:var(--text)}
+.sec-sub{font-size:15px;color:var(--text2);line-height:1.8;max-width:580px;margin-bottom:60px}
+
+/* Section divider */
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 52px}
+
+/* Market Position diagram - styled as ledger */
+.market-diagram{background:white;border:1.5px solid var(--border);border-radius:20px;padding:48px;font-family:'Courier New',Courier,monospace;font-size:12.5px;line-height:1.9;overflow-x:auto;box-shadow:0 8px 40px var(--shadow-y)}
+.market-diagram .heading{color:var(--yellow);font-weight:900;font-size:14px;letter-spacing:0.1em}
+.market-diagram .row-line{color:var(--text3)}
+.market-diagram .co-name{color:var(--orange);font-weight:700}
+.market-diagram .yours{color:var(--orchid);font-weight:900}
+.market-diagram .revenue{color:var(--yellow)}
+.market-diagram .insight{color:var(--green);font-weight:700}
+
+/* Finance numbers grid — accountant-themed */
+.finance-ticker{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:60px}
+.ticker-card{background:white;border:1.5px solid var(--border2);border-radius:12px;padding:20px 24px;position:relative;overflow:hidden;box-shadow:0 2px 12px var(--shadow-y);transition:all 0.3s}
+.ticker-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px var(--shadow-y);border-color:var(--border)}
+.ticker-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.ticker-label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:8px}
+.ticker-val{font-size:26px;font-weight:900;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;margin-bottom:4px}
+.ticker-change{font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
+.ticker-change.up{color:var(--green)}
+.ticker-change.neutral{color:var(--text3)}
+
+/* Agent grid */
+.agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.agent-card{background:white;padding:32px;position:relative;overflow:hidden;transition:all 0.3s;border:1.5px solid var(--border2);border-radius:16px;box-shadow:0 2px 16px rgba(232,169,0,0.06)}
+.agent-card:hover{border-color:var(--border);box-shadow:0 12px 40px var(--shadow-y);transform:translateY(-4px)}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transform:scaleX(0);transform-origin:left;transition:transform 0.4s;border-radius:16px 16px 0 0}
+.agent-card:hover::before{transform:scaleX(1)}
+.agent-num{font-size:11px;font-weight:700;letter-spacing:0.15em;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.agent-name{font-size:16px;font-weight:800;margin-bottom:10px;letter-spacing:-0.01em;color:var(--text)}
+.agent-role{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;font-weight:700}
+.agent-desc{font-size:12.5px;color:var(--text2);line-height:1.65}
+.agent-tech{display:flex;flex-wrap:wrap;gap:5px;margin-top:18px}
+.tech-tag{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:6px;font-weight:600}
+.priority-badge{position:absolute;top:20px;right:20px;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;padding:4px 10px;border-radius:6px;font-weight:700}
+
+/* Pricing */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.price-card{padding:40px;background:white;border:1.5px solid var(--border2);border-radius:20px;position:relative;transition:all 0.35s;overflow:hidden;box-shadow:0 4px 24px rgba(232,169,0,0.06)}
+.price-card:hover{border-color:var(--border);transform:translateY(-6px);box-shadow:0 24px 64px var(--shadow-y)}
+.price-card.featured{border-color:var(--border);background:linear-gradient(160deg,white,var(--yellow-pale))}
+.price-card.featured::before{content:'Most Popular';position:absolute;top:20px;right:20px;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:white;background:var(--yellow);padding:4px 10px;border-radius:6px;font-weight:800}
+.price-tier{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;font-weight:600}
+.price-name{font-size:20px;font-weight:800;margin-bottom:20px;letter-spacing:-0.01em;color:var(--text)}
+.price-val{font-size:44px;font-weight:900;letter-spacing:-0.04em;color:var(--yellow);margin-bottom:4px}
+.price-period{font-size:13px;color:var(--text3);margin-bottom:28px}
+.price-features{display:flex;flex-direction:column;gap:12px}
+.price-feat{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2)}
+.price-feat::before{content:'→';color:var(--orange-lt);font-size:12px;margin-top:1px;flex-shrink:0;font-weight:700}
+
+/* Regulatory cards */
+.reg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.reg-card{background:white;padding:36px;transition:all 0.3s;border:1.5px solid var(--border2);border-radius:16px;box-shadow:0 2px 16px rgba(232,169,0,0.04)}
+.reg-card:hover{border-color:var(--border-orchid);box-shadow:0 8px 32px var(--orchid-pale);transform:translateY(-2px)}
+.reg-name{font-size:18px;font-weight:900;margin-bottom:8px;color:var(--orchid)}
+.reg-title{font-size:12px;color:var(--text2);margin-bottom:16px;font-weight:500;line-height:1.5}
+.reg-items{display:flex;flex-direction:column;gap:8px}
+.reg-item{font-size:12.5px;color:var(--text2);padding-left:16px;position:relative;line-height:1.55}
+.reg-item::before{content:'·';position:absolute;left:0;color:var(--orchid);font-weight:700;font-size:16px;line-height:1.3}
+
+/* Timeline */
+.timeline{position:relative;padding-left:36px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--yellow-lt),var(--orange-lt),var(--orchid-lt),transparent)}
+.phase-item{position:relative;margin-bottom:12px;padding:28px 28px 28px 32px;background:white;border:1.5px solid var(--border2);border-radius:0;transition:all 0.3s;box-shadow:0 2px 12px rgba(232,169,0,0.04)}
+.phase-item:first-child{border-radius:16px 16px 0 0}
+.phase-item:last-child{border-radius:0 0 16px 16px;margin-bottom:0}
+.phase-item::before{content:'';position:absolute;left:-32px;top:32px;width:14px;height:14px;border-radius:50%;box-shadow:0 0 12px 3px currentColor;border:2px solid white}
+.phase-item:hover{border-color:var(--border);box-shadow:0 8px 32px var(--shadow-y)}
+.phase-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.phase-num{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;font-weight:800}
+.phase-period{font-size:10px;color:var(--text3);letter-spacing:0.1em}
+.phase-name{font-size:16px;font-weight:800;margin-bottom:8px;letter-spacing:-0.01em;color:var(--text)}
+.phase-goal{font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.phase-tasks{display:flex;flex-wrap:wrap;gap:8px}
+.phase-task{font-size:10px;padding:4px 12px;border-radius:6px;letter-spacing:0.06em;font-weight:600}
+
+/* Footer */
+footer{padding:56px 52px;border-top:1px solid var(--border2);background:var(--bg3)}
+.footer-inner{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.footer-brand{font-size:20px;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px;color:var(--text)}
+.footer-sub{font-size:12px;color:var(--text3)}
+.footer-links{display:flex;gap:10px}
+.footer-link{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);text-decoration:none;padding:8px 16px;border:1.5px solid var(--border2);border-radius:8px;transition:all 0.2s;font-weight:600;background:white}
+.footer-link:hover{color:var(--orange);border-color:rgba(232,98,10,0.25);box-shadow:0 4px 16px var(--shadow-o)}
+
+/* Summary callout */
+.callout{background:linear-gradient(135deg,var(--yellow-pale),var(--orange-pale));border:1.5px solid var(--border);border-radius:16px;padding:28px 32px;margin-top:32px}
+.callout-label{font-size:11px;color:var(--yellow);font-weight:800;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.reveal{opacity:0;transform:translateY(36px);transition:opacity 0.75s ease,transform 0.75s ease}
+.reveal.visible{opacity:1;transform:none}
+
+@media(max-width:1024px){.agent-grid{grid-template-columns:repeat(2,1fr)}.pricing-grid{grid-template-columns:1fr}.reg-grid{grid-template-columns:1fr}.metrics-bar{grid-template-columns:repeat(3,1fr)}.finance-ticker{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){nav{padding:16px 24px}.hero{padding:120px 24px 80px}.section{padding:72px 24px}.metrics-bar{grid-template-columns:repeat(2,1fr)}.agent-grid{grid-template-columns:1fr}.footer-inner{flex-direction:column;gap:24px;align-items:flex-start}.section-divider{margin:0 24px}.finance-ticker{grid-template-columns:1fr}body{cursor:auto}#cursor,#cursor-ring{display:none}}
+</style>
+</head>
+<body>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="top-accent"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="overlay"></div>
+
+<div class="content">
+
+<!-- Nav -->
+<nav>
+  <a href="index.html" class="nav-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    PaddhuLabs
+  </a>
+  <div class="nav-brand">
+    <div class="brand-logo"></div>
+    <div>
+      <div class="brand-name">Audit Platform</div>
+      <div class="brand-sub">AI Finance Intelligence</div>
+    </div>
+  </div>
+  <div class="nav-status"><div class="status-dot"></div>In Development</div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-tag">🔍 AI Consulting &amp; Audit · Canada · PIPEDA-Compliant · Finance-Native</div>
+  <h1 class="hero-title">
+    <span class="accent">Autonomous</span><br>
+    Audit Platform
+  </h1>
+  <p class="hero-sub">11 specialized AI agents acting as a full Big Four engagement team — autonomously auditing financial health, IT security, business processes, and regulatory compliance for Canadian SMBs. Every number verified. Every liability flagged. The report is the demo.</p>
+  <div class="hero-cta">
+    <a href="#agents" class="btn-primary">See All 11 Agents</a>
+    <a href="#pricing" class="btn-orange">Pricing Tiers</a>
+    <a href="#compliance" class="btn-outline">Compliance Stack</a>
+  </div>
+  <div class="metrics-bar">
+    <div class="metric-block"><div class="metric-val" style="color:var(--yellow)">11</div><div class="metric-lbl">AI Agents</div></div>
+    <div class="metric-block"><div class="metric-val" style="color:var(--orange)">CAD $499</div><div class="metric-lbl">Starting / mo</div></div>
+    <div class="metric-block"><div class="metric-val" style="color:var(--orchid)">$200M</div><div class="metric-lbl">Market Gap</div></div>
+    <div class="metric-block"><div class="metric-val" style="color:var(--peach)">71%</div><div class="metric-lbl">SMBs Using AI</div></div>
+    <div class="metric-block"><div class="metric-val" style="color:var(--green)">Y1</div><div class="metric-lbl">$25K MRR Target</div></div>
+  </div>
+</div>
+
+<!-- Market Position -->
+<section class="section">
+  <div class="sec-kicker reveal">// 01 · Market Position</div>
+  <h2 class="sec-h2 reveal">The White Space<br>Nobody Owns Yet</h2>
+  <p class="sec-sub reveal">Vanta hit $100M ARR. Drata hit $98M ARR. Both do one thing: compliance checkboxes. The Autonomous Audit Platform is a vertically integrated consulting intelligence — the equivalent of a junior Big Four team as software.</p>
+
+  <!-- Finance tickers (numbers themed) -->
+  <div class="finance-ticker reveal">
+    <div class="ticker-card" style="border-color:rgba(247,201,72,0.3)">
+      <div class="ticker-card" style="display:none"></div>
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--yellow-lt);border-radius:12px 12px 0 0"></div>
+      <div class="ticker-label">Vanta ARR</div>
+      <div class="ticker-val" style="color:var(--yellow)">$100M</div>
+      <div class="ticker-change neutral">▲ Compliance Only</div>
+    </div>
+    <div class="ticker-card" style="border-color:rgba(255,140,66,0.3)">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange-lt);border-radius:12px 12px 0 0"></div>
+      <div class="ticker-label">Drata ARR</div>
+      <div class="ticker-val" style="color:var(--orange)">$98M</div>
+      <div class="ticker-change neutral">▲ Monitoring Only</div>
+    </div>
+    <div class="ticker-card" style="border-color:rgba(218,112,214,0.3)">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--orchid-lt);border-radius:12px 12px 0 0"></div>
+      <div class="ticker-label">Target Market Gap</div>
+      <div class="ticker-val" style="color:var(--orchid)">$200M+</div>
+      <div class="ticker-change up">▲ Unoccupied Territory</div>
+    </div>
+    <div class="ticker-card" style="border-color:rgba(26,140,90,0.3)">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--green-lt);border-radius:12px 12px 0 0"></div>
+      <div class="ticker-label">Revenue Goal Y2</div>
+      <div class="ticker-val" style="color:var(--green)">CAD $200K</div>
+      <div class="ticker-change up">▲ MRR Target</div>
+    </div>
+  </div>
+
+  <div class="market-diagram reveal">
+<span class="heading">MARKET LANDSCAPE · COMPETITIVE POSITIONING</span>
+<span class="row-line">─────────────────────────────────────────────────────────────────────</span>
+
+  <span class="co-name">Vanta</span>          → Compliance automation (SOC 2 only)               <span class="revenue">$100M ARR ■■■■■■■■■</span>
+  <span class="co-name">Drata</span>          → Continuous compliance monitoring                  <span class="revenue"> $98M ARR ■■■■■■■■■</span>
+  <span class="co-name">AuditBoard</span>     → Internal audit workflow (enterprise only)         <span class="revenue"> $50M ARR ■■■■■</span>
+
+<span class="row-line">─────────────────────────────────────────────────────────────────────</span>
+  <span class="yours">◉ AUTONOMOUS AUDIT PLATFORM</span>
+      Financial Audit + IT Security + Business Process +
+      Communications Scan + Legal Liability + Compliance
+      <span class="insight">→ All dimensions. Autonomous. Canadian-first. SMB price.</span>
+
+<span class="row-line">─────────────────────────────────────────────────────────────────────</span>
+  At 50 SMB clients on Tier 1 alone: <span class="heading">CAD $25,000 MRR</span>
+  At 200 clients (mix):              <span class="heading">CAD $150,000+ MRR</span>
+  Revenue target Year 2:             <span class="heading">CAD $200,000 MRR</span>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Agents -->
+<section id="agents" class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 02 · Agent Architecture</div>
+  <h2 class="sec-h2 reveal">11 Autonomous Agents.<br>Zero Consultants Needed.</h2>
+  <p class="sec-sub reveal">A hierarchy of specialized agents operating over an async JSON message bus. Every action written to an immutable audit log. Orchestrated by Temporal.io for durable execution and auto-recovery.</p>
+
+  <div class="agent-grid reveal">
+    <!-- Orchestrator -->
+    <div class="agent-card" style="border-top:3px solid var(--yellow-lt)">
+      <div class="priority-badge" style="background:var(--yellow-pale);border:1.5px solid var(--border);color:var(--yellow)">Core Brain</div>
+      <div class="agent-num" style="color:var(--yellow)">AGENT 01</div>
+      <div class="agent-name">Orchestrator Agent</div>
+      <div class="agent-role" style="color:var(--yellow)">Central Nervous System</div>
+      <div class="agent-desc">Manages workflow execution order, agent scheduling, retry logic, and state persistence. If any agent fails, Temporal auto-retries with exponential backoff. Maintains global engagement state that all agents read.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">Temporal.io</span>
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">LangGraph</span>
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">Redis</span>
+      </div>
+    </div>
+    <!-- Ingestion -->
+    <div class="agent-card" style="border-top:3px solid var(--orange-lt)">
+      <div class="priority-badge" style="background:var(--orange-pale);border:1.5px solid rgba(232,98,10,0.2);color:var(--orange)">Critical</div>
+      <div class="agent-num" style="color:var(--orange)">AGENT 02</div>
+      <div class="agent-name">Ingestion Agent</div>
+      <div class="agent-role" style="color:var(--orange)">Document Front Door</div>
+      <div class="agent-desc">Monitors client Dropbox folder, classifies files by MIME type, computes SHA-256 integrity hashes, streams to AES-256 encrypted S3 staging in ca-central-1. Purges raw files after confirmed extraction.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">Dropbox API v2</span>
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">AWS S3</span>
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">FastAPI</span>
+      </div>
+    </div>
+    <!-- Doc Intel -->
+    <div class="agent-card" style="border-top:3px solid var(--orchid-lt)">
+      <div class="priority-badge" style="background:var(--orchid-pale);border:1.5px solid var(--border-orchid);color:var(--orchid)">Critical</div>
+      <div class="agent-num" style="color:var(--orchid)">AGENT 03</div>
+      <div class="agent-name">Document Intelligence</div>
+      <div class="agent-role" style="color:var(--orchid)">Multiformat Extractor</div>
+      <div class="agent-desc">Converts every file format — PDF, Excel, DOCX, scanned images, emails, PowerPoint — into structured queryable JSON. Uses Claude Vision for images, Amazon Textract for scanned documents. Confidence scoring with QA fallback.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">Claude Vision</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">Textract</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">pandas</span>
+      </div>
+    </div>
+    <!-- Privacy Guardian -->
+    <div class="agent-card" style="border-top:3px solid var(--peach-lt)">
+      <div class="priority-badge" style="background:var(--peach-pale);border:1.5px solid rgba(232,117,58,0.2);color:var(--peach)">Critical</div>
+      <div class="agent-num" style="color:var(--peach)">AGENT 04</div>
+      <div class="agent-name">Privacy Guardian</div>
+      <div class="agent-role" style="color:var(--peach)">Compliance Enforcement</div>
+      <div class="agent-desc">Stateful LangGraph node acting as compliance gatekeeper. No analysis agent can access personal data without a cryptographic consent token. Enforces PIPEDA Section 10.1, Quebec Law 25 Section 14 granular consent, and generates PIAs.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--peach-pale);border:1px solid rgba(232,117,58,0.2);color:var(--peach)">LangGraph</span>
+        <span class="tech-tag" style="background:var(--peach-pale);border:1px solid rgba(232,117,58,0.2);color:var(--peach)">PostgreSQL</span>
+        <span class="tech-tag" style="background:var(--peach-pale);border:1px solid rgba(232,117,58,0.2);color:var(--peach)">Law 25</span>
+      </div>
+    </div>
+    <!-- Financial -->
+    <div class="agent-card" style="border-top:3px solid var(--yellow-lt)">
+      <div class="priority-badge" style="background:var(--yellow-pale);border:1.5px solid var(--border);color:var(--yellow)">Critical</div>
+      <div class="agent-num" style="color:var(--yellow)">AGENT 05</div>
+      <div class="agent-name">Financial Analysis</div>
+      <div class="agent-role" style="color:var(--yellow)">Revenue &amp; Risk Auditor</div>
+      <div class="agent-desc">Parses income statements, balance sheets, cash flows. Detects anomalous transactions (2σ deviation), duplicate payments, revenue concentration risk (&gt;40% single client). All arithmetic validated with pandas — LLM provides reasoning only.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">Claude Sonnet</span>
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">pandas</span>
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">numpy</span>
+      </div>
+    </div>
+    <!-- IT Security -->
+    <div class="agent-card" style="border-top:3px solid var(--orange-lt)">
+      <div class="priority-badge" style="background:var(--orange-pale);border:1.5px solid rgba(232,98,10,0.2);color:var(--orange)">Critical</div>
+      <div class="agent-num" style="color:var(--orange)">AGENT 06</div>
+      <div class="agent-name">IT Security Audit</div>
+      <div class="agent-role" style="color:var(--orange)">NIST CSF Mapper</div>
+      <div class="agent-desc">Maps uploaded configs and policies against NIST CSF 2.0, CIS Controls v8, ISO 27001:2022. Detects shadow IT, MFA gaps, unpatched software. RAG against CVE database updated daily. Outputs 0–100 security posture score.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">LangGraph + RAG</span>
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">Weaviate</span>
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">NIST CSF</span>
+      </div>
+    </div>
+    <!-- Business Process -->
+    <div class="agent-card" style="border-top:3px solid var(--orchid-lt)">
+      <div class="priority-badge" style="background:var(--orchid-pale);border:1.5px solid var(--border-orchid);color:var(--orchid)">High</div>
+      <div class="agent-num" style="color:var(--orchid)">AGENT 07</div>
+      <div class="agent-name">Business Process Audit</div>
+      <div class="agent-role" style="color:var(--orchid)">Efficiency &amp; Bottleneck Mapper</div>
+      <div class="agent-desc">Analyses SOPs, org charts, and process docs to identify automation opportunities, approval chain redundancies, skill gaps, and unfavourable contract clauses. Benchmarks against SMB industry standards.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">Claude Sonnet</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">LangGraph</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">COSO</span>
+      </div>
+    </div>
+    <!-- Comms Scan -->
+    <div class="agent-card" style="border-top:3px solid var(--peach-lt)">
+      <div class="priority-badge" style="background:var(--peach-pale);border:1.5px solid rgba(232,117,58,0.2);color:var(--peach)">High Risk</div>
+      <div class="agent-num" style="color:var(--peach)">AGENT 08</div>
+      <div class="agent-name">Communications Scan</div>
+      <div class="agent-role" style="color:var(--peach)">Threat &amp; Liability Scanner</div>
+      <div class="agent-desc">Scans email data for litigation threats, discrimination indicators, unauthorized data sharing, and regulatory violations. Requires Privacy Guardian consent token — architecturally blocked without it. Zero persistence of raw data.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--peach-pale);border:1px solid rgba(232,117,58,0.2);color:var(--peach)">Claude NLP</span>
+        <span class="tech-tag" style="background:var(--peach-pale);border:1px solid rgba(232,117,58,0.2);color:var(--peach)">mail-parser</span>
+        <span class="tech-tag" style="background:var(--peach-pale);border:1px solid rgba(232,117,58,0.2);color:var(--peach)">Zero-Retention</span>
+      </div>
+    </div>
+    <!-- Knowledge Base -->
+    <div class="agent-card" style="border-top:3px solid var(--yellow-lt)">
+      <div class="priority-badge" style="background:var(--yellow-pale);border:1.5px solid var(--border);color:var(--yellow)">Critical</div>
+      <div class="agent-num" style="color:var(--yellow)">AGENT 09</div>
+      <div class="agent-name">Knowledge Base Agent</div>
+      <div class="agent-role" style="color:var(--yellow)">Intelligence Backbone</div>
+      <div class="agent-desc">Continuously updated RAG covering PIPEDA, Quebec Law 25, CASL, NIST CSF 2.0, CIS Controls, ISO 27001, CPA Canada, IFRS, ASPE, FINTRAC, PHIPA, and CVE data. Updated daily via automated pipeline. This is the moat.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">Weaviate</span>
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">OpenAI Embed</span>
+        <span class="tech-tag" style="background:var(--yellow-pale);border:1px solid var(--border);color:var(--yellow)">LangChain</span>
+      </div>
+    </div>
+    <!-- Manager -->
+    <div class="agent-card" style="border-top:3px solid var(--orange-lt)">
+      <div class="priority-badge" style="background:var(--orange-pale);border:1.5px solid rgba(232,98,10,0.2);color:var(--orange)">Core Brain</div>
+      <div class="agent-num" style="color:var(--orange)">AGENT 10</div>
+      <div class="agent-name">Manager Agent</div>
+      <div class="agent-role" style="color:var(--orange)">Consolidation Engine</div>
+      <div class="agent-desc">Receives outputs from all analysis agents, deduplicates findings, resolves contradictions, assigns composite risk scores across 4 dimensions. Determines Clean-Slate Certificate eligibility. Generates remediation roadmap ranked by effort vs. impact.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">Claude Sonnet</span>
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">LangGraph</span>
+        <span class="tech-tag" style="background:var(--orange-pale);border:1px solid rgba(232,98,10,0.2);color:var(--orange)">Multi-Step Chain</span>
+      </div>
+    </div>
+    <!-- Report -->
+    <div class="agent-card" style="border-top:3px solid var(--orchid-lt);grid-column:span 1">
+      <div class="priority-badge" style="background:var(--orchid-pale);border:1.5px solid var(--border-orchid);color:var(--orchid)">Exec Layer</div>
+      <div class="agent-num" style="color:var(--orchid)">AGENT 11</div>
+      <div class="agent-name">Report Generation</div>
+      <div class="agent-role" style="color:var(--orchid)">Visual Output Engine</div>
+      <div class="agent-desc">Transforms structured findings into a 12-section executive report with risk heat maps, financial dashboards, NIST CSF radar charts, and remediation roadmaps. Outputs interactive React dashboard + downloadable PDF. Issues Clean-Slate Certificate when all thresholds met.</div>
+      <div class="agent-tech">
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">React 19</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">D3.js</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">WeasyPrint</span>
+        <span class="tech-tag" style="background:var(--orchid-pale);border:1px solid var(--border-orchid);color:var(--orchid)">Recharts</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Pricing -->
+<section id="pricing" class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 03 · Revenue Model</div>
+  <h2 class="sec-h2 reveal">Built to Scale from<br>$499 to Enterprise</h2>
+  <p class="sec-sub reveal">Subscription SaaS designed to convert with a free first-report pilot. The report is the demo — nothing sells a $499/mo subscription like showing a CFO a genuine finding about their own business.</p>
+
+  <div class="pricing-grid reveal">
+    <div class="price-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:20px">📋</span>
+        <div class="price-tier">Tier 1</div>
+      </div>
+      <div class="price-name">Starter Audit</div>
+      <div class="price-val">$499</div>
+      <div class="price-period">CAD / month</div>
+      <div class="price-features">
+        <div class="price-feat">Annual business health audit</div>
+        <div class="price-feat">File-based ingestion (Dropbox)</div>
+        <div class="price-feat">One consolidated report per quarter</div>
+        <div class="price-feat">Clean-Slate Certificate if applicable</div>
+        <div class="price-feat">PDF deliverables with executive summary</div>
+        <div class="price-feat">Financial + Compliance dimensions</div>
+      </div>
+    </div>
+    <div class="price-card featured">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:20px">📊</span>
+        <div class="price-tier">Tier 2</div>
+      </div>
+      <div class="price-name">Active Monitor</div>
+      <div class="price-val">$1,499</div>
+      <div class="price-period">CAD / month</div>
+      <div class="price-features">
+        <div class="price-feat">Monthly audit cycles</div>
+        <div class="price-feat">Real-time monitoring + alerts</div>
+        <div class="price-feat">Financial trend analysis</div>
+        <div class="price-feat">IT security posture reporting</div>
+        <div class="price-feat">Email/communication scan (consent-gated)</div>
+        <div class="price-feat">Priority alert system</div>
+      </div>
+    </div>
+    <div class="price-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:20px">🏛️</span>
+        <div class="price-tier">Tier 3</div>
+      </div>
+      <div class="price-name">Enterprise Guard</div>
+      <div class="price-val">$4,999+</div>
+      <div class="price-period">CAD / month · custom</div>
+      <div class="price-features">
+        <div class="price-feat">Continuous real-time orchestration</div>
+        <div class="price-feat">Dedicated agent configuration</div>
+        <div class="price-feat">API integrations (SAP, Oracle, M365)</div>
+        <div class="price-feat">White-labelled reports under your brand</div>
+        <div class="price-feat">SLA guarantees + managed oversight</div>
+        <div class="price-feat">On-demand audit runs</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Compliance -->
+<section id="compliance" class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 04 · Regulatory Architecture</div>
+  <h2 class="sec-h2 reveal">Canadian Law.<br>Baked In. Not Bolted On.</h2>
+  <p class="sec-sub reveal">Penalties under Quebec Law 25 reach C$25,000,000 or 4% of worldwide turnover. Compliance is not optional — it is the architecture.</p>
+
+  <div class="reg-grid reveal">
+    <div class="reg-card">
+      <div class="reg-name">PIPEDA</div>
+      <div class="reg-title">Personal Information Protection and Electronic Documents Act</div>
+      <div class="reg-items">
+        <div class="reg-item">Explicit consent before any personal data collection or processing</div>
+        <div class="reg-item">72-hour breach notification to Privacy Commissioner under Section 10.1</div>
+        <div class="reg-item">Accountability principle documented per client engagement</div>
+        <div class="reg-item">Cryptographic consent tokens logged with timestamp and IP</div>
+      </div>
+    </div>
+    <div class="reg-card">
+      <div class="reg-name" style="color:var(--orange)">Law 25</div>
+      <div class="reg-title">Quebec Bill 64 — Fully Enforced Since September 2024</div>
+      <div class="reg-items">
+        <div class="reg-item">Section 14: Granular, explicit consent — blanket consent is non-compliant</div>
+        <div class="reg-item">Section 17: All Quebec client data in Canadian AWS regions only</div>
+        <div class="reg-item">Section 12.1: Algorithmic transparency disclosure for AI-generated findings</div>
+        <div class="reg-item">Penalties: Up to C$25M or 4% of global turnover</div>
+      </div>
+    </div>
+    <div class="reg-card">
+      <div class="reg-name" style="color:var(--yellow)">CASL</div>
+      <div class="reg-title">Canadian Anti-Spam Legislation</div>
+      <div class="reg-items">
+        <div class="reg-item">All platform-generated emails require prior express consent</div>
+        <div class="reg-item">Communications Scan Agent never sends unsolicited messages</div>
+        <div class="reg-item">Consent scope explicitly defined and logged per client</div>
+      </div>
+    </div>
+    <div class="reg-card">
+      <div class="reg-name" style="color:var(--peach)">AIDA</div>
+      <div class="reg-title">AI and Data Act (Bill C-27 — Pre-Compliance Architecture)</div>
+      <div class="reg-items">
+        <div class="reg-item">Human oversight mechanism built into Manager Agent layer</div>
+        <div class="reg-item">Bias mitigation protocols in all analysis agents</div>
+        <div class="reg-item">Algorithmic transparency documentation maintained per engagement</div>
+        <div class="reg-item">Architecture designed for AIDA now — no rebuild required when passed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Roadmap -->
+<section class="section" style="padding-top:80px">
+  <div class="sec-kicker reveal">// 05 · Build Roadmap</div>
+  <h2 class="sec-h2 reveal">12 Months to<br>50+ Paying Clients</h2>
+  <p class="sec-sub reveal">Phased execution from infrastructure to enterprise. Phase 1 pilot clients pay zero. Phase 2 launches revenue. Phase 4 targets Fortune 500.</p>
+
+  <div class="timeline reveal">
+    <div class="phase-item" style="--phase-color:var(--yellow-lt)">
+      <div style="position:absolute;left:-32px;top:32px;width:14px;height:14px;border-radius:50%;background:var(--yellow-lt);box-shadow:0 0 12px var(--yellow-lt);border:2px solid white"></div>
+      <div class="phase-header">
+        <div class="phase-num" style="color:var(--yellow)">Phase 01</div>
+        <div class="phase-period">Months 1–3</div>
+      </div>
+      <div class="phase-name">Foundation — Infrastructure + Core Agents</div>
+      <div class="phase-goal">Build ingestion pipeline, Financial and Privacy Guardian agents, Temporal workflow. Validate with 2–3 pilot clients at no charge. The report is the demo.</div>
+      <div class="phase-tasks">
+        <span class="phase-task" style="background:var(--yellow-pale);color:var(--yellow);border:1px solid var(--border)">AWS ca-central-1 Infra</span>
+        <span class="phase-task" style="background:var(--yellow-pale);color:var(--yellow);border:1px solid var(--border)">Ingestion Agent</span>
+        <span class="phase-task" style="background:var(--yellow-pale);color:var(--yellow);border:1px solid var(--border)">Document Intelligence</span>
+        <span class="phase-task" style="background:var(--yellow-pale);color:var(--yellow);border:1px solid var(--border)">Financial Agent</span>
+        <span class="phase-task" style="background:var(--yellow-pale);color:var(--yellow);border:1px solid var(--border)">Privacy Guardian</span>
+        <span class="phase-task" style="background:var(--yellow-pale);color:var(--yellow);border:1px solid var(--border)">Basic Report Output</span>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div style="position:absolute;left:-32px;top:32px;width:14px;height:14px;border-radius:50%;background:var(--orange-lt);box-shadow:0 0 12px var(--orange-lt);border:2px solid white"></div>
+      <div class="phase-header">
+        <div class="phase-num" style="color:var(--orange)">Phase 02</div>
+        <div class="phase-period">Months 4–6</div>
+      </div>
+      <div class="phase-name">Core Agent Expansion — First Revenue</div>
+      <div class="phase-goal">Full 11-agent suite operational. IT Security, Business Process, and Communications agents live. Client onboarding flow with Stripe. 5–10 paying SMB clients.</div>
+      <div class="phase-tasks">
+        <span class="phase-task" style="background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,98,10,0.2)">IT Security Agent</span>
+        <span class="phase-task" style="background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,98,10,0.2)">Business Process Agent</span>
+        <span class="phase-task" style="background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,98,10,0.2)">Comms Scan Agent</span>
+        <span class="phase-task" style="background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,98,10,0.2)">Clean-Slate Certificate</span>
+        <span class="phase-task" style="background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,98,10,0.2)">Stripe Billing</span>
+        <span class="phase-task" style="background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,98,10,0.2)">E&amp;O Insurance</span>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div style="position:absolute;left:-32px;top:32px;width:14px;height:14px;border-radius:50%;background:var(--orchid-lt);box-shadow:0 0 12px var(--orchid-lt);border:2px solid white"></div>
+      <div class="phase-header">
+        <div class="phase-num" style="color:var(--orchid)">Phase 03</div>
+        <div class="phase-period">Months 7–12</div>
+      </div>
+      <div class="phase-name">Stability, Scale &amp; Intelligence — 50+ Clients</div>
+      <div class="phase-goal">Platform reliability hardening, Knowledge Base depth expansion, French/English bilingual reports (mandatory for Quebec). SOC 2 Type II preparation begins. Target: CAD $25,000–$50,000 MRR.</div>
+      <div class="phase-tasks">
+        <span class="phase-task" style="background:var(--orchid-pale);color:var(--orchid);border:1px solid var(--border-orchid)">Temporal Failover</span>
+        <span class="phase-task" style="background:var(--orchid-pale);color:var(--orchid);border:1px solid var(--border-orchid)">Bilingual Reports</span>
+        <span class="phase-task" style="background:var(--orchid-pale);color:var(--orchid);border:1px solid var(--border-orchid)">Microsoft 365 Integration</span>
+        <span class="phase-task" style="background:var(--orchid-pale);color:var(--orchid);border:1px solid var(--border-orchid)">QA Feedback Loop</span>
+        <span class="phase-task" style="background:var(--orchid-pale);color:var(--orchid);border:1px solid var(--border-orchid)">SOC 2 Type II Prep</span>
+        <span class="phase-task" style="background:var(--orchid-pale);color:var(--orchid);border:1px solid var(--border-orchid)">50+ SMB Clients</span>
+      </div>
+    </div>
+    <div class="phase-item">
+      <div style="position:absolute;left:-32px;top:32px;width:14px;height:14px;border-radius:50%;background:var(--green-lt);box-shadow:0 0 12px var(--green-lt);border:2px solid white"></div>
+      <div class="phase-header">
+        <div class="phase-num" style="color:var(--green)">Phase 04</div>
+        <div class="phase-period">Year 2+</div>
+      </div>
+      <div class="phase-name">Enterprise Transition — Fortune 500 &amp; US Market</div>
+      <div class="phase-goal">API-based integrations (SAP, Oracle), white-label reseller program for accounting firms, US market expansion with HIPAA and CCPA modules. Revenue target: CAD $200,000 MRR.</div>
+      <div class="phase-tasks">
+        <span class="phase-task" style="background:rgba(26,140,90,0.08);color:var(--green);border:1px solid rgba(26,140,90,0.2)">SAP / Oracle API</span>
+        <span class="phase-task" style="background:rgba(26,140,90,0.08);color:var(--green);border:1px solid rgba(26,140,90,0.2)">White-Label Offering</span>
+        <span class="phase-task" style="background:rgba(26,140,90,0.08);color:var(--green);border:1px solid rgba(26,140,90,0.2)">US Expansion</span>
+        <span class="phase-task" style="background:rgba(26,140,90,0.08);color:var(--green);border:1px solid rgba(26,140,90,0.2)">HIPAA Module</span>
+        <span class="phase-task" style="background:rgba(26,140,90,0.08);color:var(--green);border:1px solid rgba(26,140,90,0.2)">CCPA Module</span>
+        <span class="phase-task" style="background:rgba(26,140,90,0.08);color:var(--green);border:1px solid rgba(26,140,90,0.2)">$200K MRR</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout reveal">
+    <div class="callout-label">💰 Financial Summary</div>
+    <p style="font-size:14px;color:var(--text2);line-height:1.7">At 50 SMB clients on Tier 1 alone: <strong style="color:var(--yellow)">CAD $25,000 MRR</strong>. At 200 clients with mix: <strong style="color:var(--orange)">CAD $150,000+ MRR</strong>. Series A fundable at <strong style="color:var(--orchid)">$4–6M valuation</strong> on $50K+ MRR. The SAM is every Canadian SMB that currently has no affordable alternative to Big Four pricing — and that's a $200M+ underserved gap.</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Autonomous Audit Platform</div>
+      <div class="footer-sub">A Paddhu's Ventures Inc Initiative · Confidential Strategic Document</div>
+    </div>
+    <div class="footer-links">
+      <a href="index.html" class="footer-link">← Back to PaddhuLabs</a>
+      <a href="voiceiq.html" class="footer-link">VoiceIQ →</a>
+      <a href="trading-council.html" class="footer-link">Council OS →</a>
+    </div>
+  </div>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script>
+// Cursor
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let cx=0,cy=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;});
+(function ac(){rx+=(cx-rx)*0.1;ry+=(cy-ry)*0.1;cursor.style.left=cx+'px';cursor.style.top=cy+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ac);})();
+document.querySelectorAll('a,.agent-card,.price-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='60px';ring.style.height='60px';});
+  el.addEventListener('mouseleave',()=>{ring.style.width='40px';ring.style.height='40px';});
+});
+
+// Three.js — Financial data nodes constellation (bright/warm)
+const canvas=document.getElementById('bg-canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,500);
+camera.position.set(0,0,40);
+
+function mkTex(c){
+  const cv=document.createElement('canvas');cv.width=cv.height=32;
+  const ctx=cv.getContext('2d');
+  const g=ctx.createRadialGradient(16,16,0,16,16,16);
+  g.addColorStop(0,c+'ff');g.addColorStop(0.4,c+'88');g.addColorStop(1,c+'00');
+  ctx.fillStyle=g;ctx.fillRect(0,0,32,32);
+  return new THREE.CanvasTexture(cv);
+}
+
+// Citrus-coloured data particles (simulating financial data points)
+const N=4000;
+const pos=new Float32Array(N*3),vel=new Float32Array(N),col=new Float32Array(N*3);
+// Palette: yellow, orange, orchid, peach
+const citrusPalette=[
+  [0.97,0.79,0.28],  // yellow
+  [1.0,0.55,0.26],   // orange
+  [0.85,0.44,0.84],  // orchid
+  [1.0,0.72,0.6],    // peach
+  [0.1,0.76,0.44],   // green (accent)
+];
+for(let i=0;i<N;i++){
+  const i3=i*3;
+  pos[i3]=(Math.random()-.5)*80;
+  pos[i3+1]=(Math.random()-.5)*80;
+  pos[i3+2]=(Math.random()-.5)*40;
+  vel[i]=0.02+Math.random()*0.05;
+  const [cr,cg,cb]=citrusPalette[Math.floor(Math.random()*citrusPalette.length)];
+  col[i3]=cr;col[i3+1]=cg;col[i3+2]=cb;
+}
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const mat=new THREE.PointsMaterial({size:0.5,map:mkTex('#F7C948'),vertexColors:true,transparent:true,alphaMap:mkTex('#ffffff'),depthWrite:false,blending:THREE.AdditiveBlending});
+const pts=new THREE.Points(geo,mat);
+scene.add(pts);
+
+// Floating ledger lines (horizontal thin planes)
+for(let i=0;i<12;i++){
+  const g=new THREE.PlaneGeometry(100,0.04);
+  const m=new THREE.MeshBasicMaterial({color:new THREE.Color(i%3===0?'#F7C948':i%3===1?'#FF8C42':'#DA70D6'),transparent:true,opacity:0.08,blending:THREE.AdditiveBlending});
+  const p=new THREE.Mesh(g,m);
+  p.position.y=(i-6)*9;p.position.z=-8;
+  scene.add(p);
+}
+
+let mx=0,my=0,tmx=0,tmy=0,scrollY=0;
+document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5);my=(e.clientY/window.innerHeight-.5);});
+window.addEventListener('scroll',()=>{scrollY=window.scrollY;});
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+
+const posAttr=geo.getAttribute('position');
+(function animate(){
+  requestAnimationFrame(animate);
+  tmx+=(mx-tmx)*0.03;tmy+=(my-tmy)*0.03;
+  // Float particles upward slowly (rising data)
+  for(let i=0;i<N;i++){
+    posAttr.array[i*3+1]+=vel[i]*0.3;
+    if(posAttr.array[i*3+1]>40){posAttr.array[i*3+1]=-40;}
+  }
+  posAttr.needsUpdate=true;
+  pts.rotation.y=tmx*0.3;
+  camera.position.x=tmx*4;
+  camera.position.y=-tmy*3+scrollY*0.003;
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+})();
+
+// Scroll reveal
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});},{threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+document.querySelectorAll('.agent-card').forEach((el,i)=>{
+  el.style.opacity='0';el.style.transform='translateY(24px)';
+  el.style.transition=`opacity 0.5s ease ${i*0.06}s,transform 0.5s ease ${i*0.06}s`;
+});
+const cardObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';}});},{threshold:0.05});
+document.querySelectorAll('.agent-card').forEach(el=>cardObs.observe(el));
+</script>
+</body>
+</html>

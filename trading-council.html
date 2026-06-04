@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Council OS — AI Trading System · PaddhuLabs</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060501;--bg2:#0A0900;--bg3:#100D00;
+  --gold:#F59E0B;--gold2:#D97706;--gold3:#92400E;--amber:#FCD34D;
+  --green:#10B981;--teal:#14B8A6;--red:#EF4444;
+  --text:#E2E8F0;--text2:#94A3B8;--text3:#4B5563;
+  --glass:rgba(245,158,11,0.03);--border:rgba(245,158,11,0.15);--border2:rgba(255,255,255,0.06);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;overflow-x:hidden;cursor:none}
+#cursor{position:fixed;width:10px;height:10px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 20px var(--gold),0 0 40px rgba(245,158,11,0.4)}
+#cursor-ring{position:fixed;width:40px;height:40px;border:1px solid rgba(245,158,11,0.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform 0.15s,width 0.3s,height 0.3s}
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+.overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(245,158,11,0.08) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(16,185,129,0.05) 0%,transparent 60%);pointer-events:none;z-index:1}
+.content{position:relative;z-index:2}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 52px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,5,1,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-back{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text2);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;transition:color 0.2s}
+.nav-back:hover{color:var(--gold)}
+.nav-back svg{width:16px;height:16px;transition:transform 0.2s}
+.nav-back:hover svg{transform:translateX(-3px)}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.brand-logo{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(245,158,11,0.2)}
+.brand-logo::before{content:'';width:10px;height:10px;background:var(--gold);border-radius:2px;box-shadow:0 0 12px var(--gold)}
+.brand-name{font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
+.brand-sub{font-size:8px;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;margin-top:1px}
+.nav-conviction{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;border:1px solid rgba(245,158,11,0.25);padding:6px 14px;border-radius:100px}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:140px 52px 100px;max-width:1400px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:10px;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);border:1px solid var(--border);border-radius:100px;padding:7px 18px;margin-bottom:40px;animation:fadeUp 0.8s ease 0.1s both}
+.hero-tag-dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:blink 2s infinite;box-shadow:0 0 8px var(--gold)}
+.hero-title{font-size:clamp(52px,7vw,104px);font-weight:900;line-height:0.92;letter-spacing:-0.04em;margin-bottom:32px;animation:fadeUp 0.8s ease 0.2s both}
+.hero-title .the{display:block;color:rgba(226,232,240,0.5);font-size:0.5em;letter-spacing:0.1em;text-transform:uppercase;font-weight:400;margin-bottom:8px}
+.hero-title .council{display:block;background:linear-gradient(100deg,var(--gold) 0%,var(--amber) 40%,var(--green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(245,158,11,0.5))}
+.hero-title .knows{display:block;color:var(--text);font-size:0.7em;letter-spacing:-0.02em}
+.hero-sub{font-size:17px;color:var(--text2);max-width:640px;line-height:1.75;margin-bottom:52px;animation:fadeUp 0.8s ease 0.35s both}
+.hero-cta{display:flex;gap:14px;margin-bottom:80px;animation:fadeUp 0.8s ease 0.45s both;flex-wrap:wrap;justify-content:center}
+.btn-gold{padding:14px 34px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:800;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border-radius:10px;transition:all 0.3s;box-shadow:0 4px 24px rgba(245,158,11,0.35)}
+.btn-gold:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(245,158,11,0.5)}
+.btn-outline{padding:14px 34px;background:transparent;color:var(--gold);font-weight:600;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1px solid var(--border);border-radius:10px;transition:all 0.3s}
+.btn-outline:hover{background:rgba(245,158,11,0.06);transform:translateY(-2px)}
+.metrics-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border2);border-radius:16px;overflow:hidden;width:100%;max-width:800px;animation:fadeUp 0.8s ease 0.6s both}
+.metric-block{background:var(--bg2);padding:28px 20px;text-align:center}
+.metric-val{font-size:30px;font-weight:900;letter-spacing:-0.03em;color:var(--gold)}
+.metric-lbl{font-size:8px;color:var(--text3);letter-spacing:0.18em;text-transform:uppercase;margin-top:5px}
+
+/* Section */
+.section{padding:100px 52px;max-width:1400px;margin:0 auto}
+.sec-kicker{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-kicker::after{content:'';height:1px;background:linear-gradient(to right,var(--border),transparent);flex:1;max-width:80px}
+.sec-h2{font-size:clamp(32px,4vw,52px);font-weight:900;letter-spacing:-0.03em;line-height:1.05;margin-bottom:14px}
+.sec-sub{font-size:15px;color:var(--text2);line-height:1.75;max-width:600px;margin-bottom:60px}
+
+/* Council grid */
+.council-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border2);border-radius:20px;overflow:hidden}
+.council-member{background:var(--bg2);padding:32px 24px;position:relative;overflow:hidden;transition:all 0.3s;text-align:center}
+.council-member:hover{background:var(--bg3)}
+.council-member::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--member-color,var(--gold))}
+.member-emoji{font-size:36px;margin-bottom:16px;display:block}
+.member-name{font-size:14px;font-weight:800;margin-bottom:6px;letter-spacing:-0.01em}
+.member-persona{font-size:10px;color:var(--member-color,var(--gold));letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;font-weight:600}
+.member-task{font-size:12px;color:var(--text2);line-height:1.55}
+.member-tag{position:absolute;bottom:16px;right:16px;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid;opacity:0.7}
+
+/* Debate protocol */
+.protocol{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px}
+.protocol-card{padding:32px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;transition:all 0.3s}
+.protocol-card:hover{border-color:rgba(245,158,11,0.3);transform:translateY(-4px)}
+.protocol-step{font-size:11px;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;font-weight:700;margin-bottom:12px}
+.protocol-title{font-size:16px;font-weight:800;margin-bottom:10px}
+.protocol-desc{font-size:13px;color:var(--text2);line-height:1.65}
+
+.conviction-bar{padding:28px 32px;background:var(--bg2);border:1px solid rgba(245,158,11,0.3);border-radius:16px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.conviction-rule{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text2)}
+.conviction-val{font-size:22px;font-weight:900;color:var(--gold);min-width:50px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* Daily flow */
+.flow-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.flow-col{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;overflow:hidden}
+.flow-col-header{padding:20px 24px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+.flow-col-dot{width:8px;height:8px;border-radius:50%}
+.flow-col-title{font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700}
+.flow-item{display:flex;gap:0;border-bottom:1px solid rgba(245,158,11,0.05)}
+.flow-item:last-child{border-bottom:none}
+.flow-time{width:80px;padding:16px;border-right:1px solid rgba(245,158,11,0.07);font-size:10px;color:var(--gold);font-weight:700;letter-spacing:0.05em;flex-shrink:0;display:flex;align-items:flex-start;padding-top:18px}
+.flow-content{flex:1;padding:16px 20px}
+.flow-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.flow-sub{font-size:11.5px;color:var(--text2);line-height:1.55}
+
+/* Roadmap table */
+.roadmap-table{width:100%;border-collapse:collapse;font-size:13px}
+.roadmap-table th{text-align:left;padding:10px 16px;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2);font-weight:600}
+.roadmap-table td{padding:16px;border-bottom:1px solid rgba(245,158,11,0.05);vertical-align:top}
+.roadmap-table tr:hover td{background:rgba(245,158,11,0.02)}
+.roadmap-table .highlight{color:var(--gold);font-weight:700}
+.roadmap-table .period{color:var(--gold);font-weight:700;font-size:11px;letter-spacing:0.08em}
+
+/* Capital targets */
+.capital-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;background:var(--border2);border-radius:16px;overflow:hidden}
+.cap-block{background:var(--bg2);padding:24px 16px;text-align:center;transition:background 0.2s}
+.cap-block:hover{background:var(--bg3)}
+.cap-period{font-size:9px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px}
+.cap-start{font-size:12px;color:var(--text2);margin-bottom:4px}
+.cap-target{font-size:20px;font-weight:900;color:var(--gold);letter-spacing:-0.02em;margin-bottom:4px}
+.cap-rate{font-size:10px;color:var(--green);margin-bottom:6px}
+.cap-milestone{font-size:10px;color:var(--text3);line-height:1.4}
+
+/* Cost breakdown */
+.cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cost-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px}
+.cost-title{font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:24px;font-weight:600}
+.cost-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(245,158,11,0.05)}
+.cost-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.cost-label{font-size:13px;color:var(--text2)}
+.cost-val{font-size:15px;font-weight:800;color:var(--gold)}
+.cost-bar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden}
+.cost-bar{height:100%;border-radius:2px}
+.total-val{font-size:28px;font-weight:900;color:var(--gold);letter-spacing:-0.03em;margin-top:20px}
+.total-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* Agent system overview */
+.agent-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--border2);border-radius:20px;overflow:hidden}
+.agent-ov{background:var(--bg2);padding:32px;position:relative;overflow:hidden;transition:background 0.3s}
+.agent-ov:hover{background:var(--bg3)}
+.agent-ov::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ov-color,var(--gold));transform:scaleX(0);transform-origin:left;transition:transform 0.4s}
+.agent-ov:hover::before{transform:scaleX(1)}
+.ov-emoji{font-size:32px;margin-bottom:18px;display:block}
+.ov-num{font-size:10px;color:var(--text3);letter-spacing:0.15em;margin-bottom:10px;font-weight:700}
+.ov-name{font-size:16px;font-weight:800;margin-bottom:6px;letter-spacing:-0.01em}
+.ov-persona{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;margin-bottom:14px}
+.ov-desc{font-size:12.5px;color:var(--text2);line-height:1.65}
+.ov-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:16px}
+.ov-tag{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:4px;color:rgba(245,158,11,0.9)}
+
+/* Footer */
+footer{padding:56px 52px;border-top:1px solid var(--border2)}
+.footer-inner{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.footer-brand{font-size:20px;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px}
+.footer-sub{font-size:12px;color:var(--text3)}
+.footer-links{display:flex;gap:10px}
+.footer-link{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);text-decoration:none;padding:8px 16px;border:1px solid var(--border2);border-radius:8px;transition:all 0.2s}
+.footer-link:hover{color:var(--gold);border-color:var(--border)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.reveal{opacity:0;transform:translateY(36px);transition:opacity 0.75s ease,transform 0.75s ease}
+.reveal.visible{opacity:1;transform:none}
+
+@media(max-width:1200px){.council-grid{grid-template-columns:repeat(2,1fr)}.capital-grid{grid-template-columns:repeat(3,1fr)}.agent-overview{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.flow-grid{grid-template-columns:1fr}.cost-grid{grid-template-columns:1fr}.protocol{grid-template-columns:1fr}.metrics-bar{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){nav{padding:16px 24px}.hero{padding:120px 24px 80px}.section{padding:72px 24px}.council-grid{grid-template-columns:1fr}.capital-grid{grid-template-columns:repeat(2,1fr)}.agent-overview{grid-template-columns:1fr}.footer-inner{flex-direction:column;gap:24px;align-items:flex-start}body{cursor:auto}#cursor,#cursor-ring{display:none}}
+</style>
+</head>
+<body>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="overlay"></div>
+<div class="content">
+
+<!-- Nav -->
+<nav>
+  <a href="index.html" class="nav-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    PaddhuLabs
+  </a>
+  <div class="nav-brand">
+    <div class="brand-logo"></div>
+    <div>
+      <div class="brand-name">Council OS</div>
+      <div class="brand-sub">AI Trading System</div>
+    </div>
+  </div>
+  <div class="nav-conviction">🎩 6/8 Conviction to Trade</div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-tag"><div class="hero-tag-dot"></div>8 Agents · Oxford Debate · Warren Buffett Chairman</div>
+  <h1 class="hero-title">
+    <span class="the">Personal AI Trading Council</span>
+    <span class="council">The Council</span>
+    <span class="knows">Knows When to Strike</span>
+  </h1>
+  <p class="hero-sub">Eight AI agents embodying the world's greatest investors — Buffett, Soros, Dalio, Lynch, Tudor Jones — debate every trade in Oxford style. Three rounds. Eight votes. Nothing executes without a 6/8 conviction score. Warren Buffett holds the final veto.</p>
+  <div class="hero-cta">
+    <a href="#council" class="btn-gold">Meet the Council</a>
+    <a href="#flow" class="btn-outline">Daily Pipeline</a>
+  </div>
+  <div class="metrics-bar">
+    <div class="metric-block"><div class="metric-val">8</div><div class="metric-lbl">Council Agents</div></div>
+    <div class="metric-block"><div class="metric-val">6/8</div><div class="metric-lbl">Min Conviction</div></div>
+    <div class="metric-block"><div class="metric-val">$13–17</div><div class="metric-lbl">Monthly Cost</div></div>
+    <div class="metric-block"><div class="metric-val">5 Yr</div><div class="metric-lbl">Build Horizon</div></div>
+  </div>
+</div>
+
+<!-- Agent System Overview -->
+<section class="section">
+  <div class="sec-kicker reveal">// 00 · System Architecture</div>
+  <h2 class="sec-h2 reveal">Six Specialized Agents.<br>One Council. One Veto.</h2>
+  <p class="sec-sub reveal">The system architecture separates concerns across six functional agents — the 8-Member Council is one of those agents, itself containing 7 debating personas plus the Chairman. Every decision is logged to institutional memory.</p>
+
+  <div class="agent-overview reveal">
+    <div class="agent-ov" style="--ov-color:var(--gold)">
+      <span class="ov-emoji">🎩</span>
+      <div class="ov-num">AGENT 01</div>
+      <div class="ov-name">Buffett CEO Agent</div>
+      <div class="ov-persona" style="color:var(--gold)">Orchestrator · Final Authority</div>
+      <div class="ov-desc">Ruthless capital allocator. Patient beyond measure. Every decision filtered through: "Would I hold this for 10 years?" Overrides the full council if conviction threshold not met. Sets the philosophical framework for every investment session.</div>
+      <div class="ov-tags"><span class="ov-tag">Value Investing</span><span class="ov-tag">Veto Power</span><span class="ov-tag">Final Word</span></div>
+    </div>
+    <div class="agent-ov" style="--ov-color:#3B82F6">
+      <span class="ov-emoji">📡</span>
+      <div class="ov-num">AGENT 02</div>
+      <div class="ov-name">Market Analyst</div>
+      <div class="ov-persona" style="color:#3B82F6">Sector Scout · Screener</div>
+      <div class="ov-desc">Scans NSE, NYSE, ASX and crypto markets daily. Screens by P/E, ROE, moat strength, insider activity, and earnings momentum. Shortlists 3–5 candidates each session and prepares the thesis dossier for the council's consideration.</div>
+      <div class="ov-tags"><span class="ov-tag">yfinance</span><span class="ov-tag">NewsAPI</span><span class="ov-tag">Screener</span></div>
+    </div>
+    <div class="agent-ov" style="--ov-color:var(--green)">
+      <span class="ov-emoji">⚖️</span>
+      <div class="ov-num">AGENT 03</div>
+      <div class="ov-name">LLM Research Council</div>
+      <div class="ov-persona" style="color:var(--green)">7-Member Oxford Debate Chamber</div>
+      <div class="ov-desc">The core of the system. Bull, Bear, Value, Technical, Risk, Macro, and Devil's Advocate agents debate 3 rounds per candidate. Each member scores conviction 0–10. Minimum 6/8 required to proceed. Structured investment thesis produced.</div>
+      <div class="ov-tags"><span class="ov-tag">Claude Sonnet</span><span class="ov-tag">Oxford Debate</span><span class="ov-tag">Multi-Agent</span></div>
+    </div>
+    <div class="agent-ov" style="--ov-color:#D97706">
+      <span class="ov-emoji">💼</span>
+      <div class="ov-num">AGENT 04</div>
+      <div class="ov-name">Wealth Manager</div>
+      <div class="ov-persona" style="color:#D97706">Multi-Legend Portfolio Agent</div>
+      <div class="ov-desc">Runs pre-market and pre-close sessions. Rebalances across crypto, US equities, NSE and ASX. Blend of Buffett capital preservation + Dalio all-weather + Lynch growth frameworks. Manages concentration risk and cross-asset correlation.</div>
+      <div class="ov-tags"><span class="ov-tag">Portfolio Theory</span><span class="ov-tag">Rebalancing</span><span class="ov-tag">Risk Mgmt</span></div>
+    </div>
+    <div class="agent-ov" style="--ov-color:var(--red)">
+      <span class="ov-emoji">⚡</span>
+      <div class="ov-num">AGENT 05</div>
+      <div class="ov-name">Trading Agent</div>
+      <div class="ov-persona" style="color:var(--red)">Execution Layer</div>
+      <div class="ov-desc">Receives council verdict and executes. Position size is directly tied to conviction score — low conviction equals small size, 8/8 equals full planned allocation. Routes through Security Agent gate before every order. Logs every trade to Supabase.</div>
+      <div class="ov-tags"><span class="ov-tag">KuCoin API</span><span class="ov-tag">Alpaca</span><span class="ov-tag">Zerodha</span></div>
+    </div>
+    <div class="agent-ov" style="--ov-color:#9B7FD4">
+      <span class="ov-emoji">🧠</span>
+      <div class="ov-num">AGENT 06</div>
+      <div class="ov-name">Memory Agent</div>
+      <div class="ov-persona" style="color:#9B7FD4">Institutional Knowledge Store</div>
+      <div class="ov-desc">Logs every decision, debate, and outcome. When council debates similar conditions, recalls historical performance and past conviction scores. Prevents repeat mistakes. Builds compounding institutional knowledge — the system's greatest long-term asset.</div>
+      <div class="ov-tags"><span class="ov-tag">Supabase pgvector</span><span class="ov-tag">RAG</span><span class="ov-tag">Compounding</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Council Members -->
+<section id="council" class="section" style="padding-top:0">
+  <div class="sec-kicker reveal">// 01 · The 8-Member Council</div>
+  <h2 class="sec-h2 reveal">The Greatest Investors<br>in One Room.</h2>
+  <p class="sec-sub reveal">Each council member embodies a legendary investor's philosophy, debate style, and analytical framework — clashing in structured Oxford rounds before the Chairman renders a final verdict.</p>
+
+  <div class="council-grid reveal">
+    <div class="council-member" style="--member-color:var(--green)">
+      <span class="member-emoji">🐂</span>
+      <div class="member-name">Bull Advocate</div>
+      <div class="member-persona">George Soros · Reflexivity</div>
+      <div class="member-task">Argues the strongest possible case for the trade — opportunities, catalysts, and asymmetric upside scenarios.</div>
+      <div class="member-tag" style="color:var(--green);border-color:rgba(16,185,129,0.3)">Round 1</div>
+    </div>
+    <div class="council-member" style="--member-color:var(--red)">
+      <span class="member-emoji">🐻</span>
+      <div class="member-name">Bear Advocate</div>
+      <div class="member-persona">Jim Rogers · Contrarian</div>
+      <div class="member-task">Argues against — finds every structural flaw, macro headwind, and reason the trade will fail at the worst possible moment.</div>
+      <div class="member-tag" style="color:var(--red);border-color:rgba(239,68,68,0.3)">Opposition</div>
+    </div>
+    <div class="council-member" style="--member-color:var(--gold)">
+      <span class="member-emoji">📊</span>
+      <div class="member-name">Value Analyst</div>
+      <div class="member-persona">Peter Lynch · GARP</div>
+      <div class="member-task">PEG ratio analysis, economic moat evaluation, insider signal assessment. Is this a business worth owning at this price?</div>
+      <div class="member-tag" style="color:var(--gold);border-color:rgba(245,158,11,0.3)">Valuation</div>
+    </div>
+    <div class="council-member" style="--member-color:#3B82F6">
+      <span class="member-emoji">📈</span>
+      <div class="member-name">Technical Analyst</div>
+      <div class="member-persona">Jesse Livermore · Momentum</div>
+      <div class="member-task">Price action, volume confirmation, trend alignment. Does the tape agree with the thesis? Is this the right entry point?</div>
+      <div class="member-tag" style="color:#3B82F6;border-color:rgba(59,130,246,0.3)">Technicals</div>
+    </div>
+    <div class="council-member" style="--member-color:#9B7FD4">
+      <span class="member-emoji">🛡️</span>
+      <div class="member-name">Risk Officer</div>
+      <div class="member-persona">Paul Tudor Jones · 5:1 Rule</div>
+      <div class="member-task">Risk/reward ratio evaluation, stop placement optimization, maximum position sizing. Never risk a dollar to make a dollar.</div>
+      <div class="member-tag" style="color:#9B7FD4;border-color:rgba(155,127,212,0.3)">Risk Mgmt</div>
+    </div>
+    <div class="council-member" style="--member-color:#4ABFCF">
+      <span class="member-emoji">🌐</span>
+      <div class="member-name">Macro Economist</div>
+      <div class="member-persona">Ray Dalio · All Weather</div>
+      <div class="member-task">Federal Reserve policy, yield curve positioning, DXY strength, geopolitical risk. Does the macro environment support this trade?</div>
+      <div class="member-tag" style="color:#4ABFCF;border-color:rgba(74,191,207,0.3)">Macro</div>
+    </div>
+    <div class="council-member" style="--member-color:var(--red)">
+      <span class="member-emoji">😈</span>
+      <div class="member-name">Devil's Advocate</div>
+      <div class="member-persona">Always Contrarian</div>
+      <div class="member-task">Mandatory opposition even when all 6 members agree. Prevents overconfidence and groupthink. Buffett himself uses this technique in his own process.</div>
+      <div class="member-tag" style="color:var(--red);border-color:rgba(239,68,68,0.3)">Mandatory</div>
+    </div>
+    <div class="council-member" style="--member-color:var(--gold);background:rgba(245,158,11,0.04)">
+      <span class="member-emoji">🎩</span>
+      <div class="member-name">Chairman Buffett</div>
+      <div class="member-persona">Final Vote · Veto Power</div>
+      <div class="member-task">Reviews the full debate transcript. Applies value + capital preservation filter. Can veto even a unanimous 7/7 consensus if it violates core principles.</div>
+      <div class="member-tag" style="color:var(--gold);border-color:rgba(245,158,11,0.4)">🎩 Chairman</div>
+    </div>
+  </div>
+
+  <!-- Debate protocol -->
+  <div style="margin-top:20px" class="reveal">
+    <div class="protocol">
+      <div class="protocol-card">
+        <div class="protocol-step">Round 01</div>
+        <div class="protocol-title">Opening Arguments</div>
+        <div class="protocol-desc">Each member presents their opening statement. Bull first, Bear second, Value third, then remaining agents in sequence. Maximum 200 tokens per member. No rebuttals yet.</div>
+      </div>
+      <div class="protocol-card">
+        <div class="protocol-step">Round 02</div>
+        <div class="protocol-title">Cross-Examination</div>
+        <div class="protocol-desc">Rebuttals only. Each member responds to the single strongest opposing argument from Round 1. No new information may be introduced. Logic and evidence only.</div>
+      </div>
+      <div class="protocol-card">
+        <div class="protocol-step">Round 03</div>
+        <div class="protocol-title">Conviction Vote</div>
+        <div class="protocol-desc">Final conviction score 0–10 from each member. Chairman reads the full transcript, applies value filter, and issues final verdict. Veto requires written reason with specific principle cited.</div>
+      </div>
+    </div>
+    <div class="conviction-bar">
+      <div style="font-size:13px;font-weight:700;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase">Conviction Thresholds</div>
+      <div style="flex:1;height:1px;background:var(--border2)"></div>
+      <div class="conviction-rule"><div class="conviction-val" style="color:var(--green)">≥6/8</div><div>Execute BUY · Position size = capital × (conviction/10)</div></div>
+      <div class="conviction-rule" style="margin-left:24px"><div class="conviction-val" style="color:var(--gold)">≥4/8</div><div>Execute SELL · Lower threshold for exits</div></div>
+      <div class="conviction-rule" style="margin-left:24px"><div class="conviction-val" style="color:var(--red)">&lt;4/8</div><div>HOLD · Reason logged · Reviewed next session</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Daily Flow -->
+<section id="flow" class="section" style="padding-top:0">
+  <div class="sec-kicker reveal">// 02 · Daily Pipeline</div>
+  <h2 class="sec-h2 reveal">Two Sessions.<br>Every Market Day.</h2>
+  <p class="sec-sub reveal">Pre-market at 06:30 IST for BUY decisions. Pre-close at 14:45 IST for position review. The system runs on its own schedule — you review the log.</p>
+  <div class="flow-grid reveal">
+    <div class="flow-col">
+      <div class="flow-col-header">
+        <div class="flow-col-dot" style="background:var(--green)"></div>
+        <div class="flow-col-title" style="color:var(--green)">Pre-Market Session</div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">06:30</div>
+        <div class="flow-content"><div class="flow-title">Wealth Manager activates</div><div class="flow-sub">Scans overnight news, checks open positions, flags anything requiring immediate attention. Sets session context.</div></div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">06:45</div>
+        <div class="flow-content"><div class="flow-title">Market Analyst runs screener</div><div class="flow-sub">Filters NSE, NYSE, and Crypto universe. Shortlists 3–5 candidates with thesis dossiers. Macro Agent feeds current environment context.</div></div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">07:00</div>
+        <div class="flow-content"><div class="flow-title">Council convened on Candidate #1</div><div class="flow-sub">Bull opens. Bear responds. 3 full rounds of debate. Each member scores conviction 0–10. Street Consensus Agent provides analyst views.</div></div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">07:20</div>
+        <div class="flow-content"><div class="flow-title">Conviction score tallied</div><div class="flow-sub">Requires ≥6/8 to proceed. Below threshold → HOLD logged with full reasoning. Memory Agent checks historical similarity to past debates.</div></div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">07:25</div>
+        <div class="flow-content"><div class="flow-title">Buffett Agent reviews</div><div class="flow-sub">Reads full debate transcript. Applies value + preservation filter. Can veto even 8/8 consensus if it violates core principles.</div></div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">07:30</div>
+        <div class="flow-content"><div class="flow-title">Trading Agent executes</div><div class="flow-sub">Position size = capital × (conviction/10) × risk_multiplier. Security gate → exchange API → Supabase log → Telegram alert sent.</div></div>
+      </div>
+    </div>
+    <div class="flow-col">
+      <div class="flow-col-header">
+        <div class="flow-col-dot" style="background:var(--gold)"></div>
+        <div class="flow-col-title" style="color:var(--gold)">Pre-Close Session</div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">14:45</div>
+        <div class="flow-content"><div class="flow-title">Wealth Manager reviews positions</div><div class="flow-sub">All open positions evaluated against current price action and news. Council only reconvenes if a position is down >7% or material news breaks.</div></div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-time">15:00</div>
+        <div class="flow-content"><div class="flow-title">Memory Agent logs session</div><div class="flow-sub">Full debate transcript, prices, conviction scores, and trade outcomes stored in Supabase pgvector. Portfolio snapshot saved. Next day's screener parameters updated.</div></div>
+      </div>
+      <div style="padding:24px;border-top:1px solid var(--border2)">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:16px">API Budget / Day (3 assets)</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;font-size:12px">
+          <span style="color:var(--text2)">Market Analyst screening</span><span style="color:var(--text)">5–8 calls</span>
+          <span style="color:var(--text2)">Council debate (per asset)</span><span style="color:var(--text)">24 calls</span>
+          <span style="color:var(--text2)">Buffett review</span><span style="color:var(--text)">2 calls</span>
+          <span style="color:var(--text2)">Wealth Manager sessions</span><span style="color:var(--text)">4 calls</span>
+          <span style="color:var(--text2)">Memory Agent queries</span><span style="color:var(--text)">3 calls</span>
+          <span style="color:var(--gold);font-weight:700">Total (3 assets)</span><span style="color:var(--gold);font-weight:700">~80–100</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Roadmap & Capital -->
+<section class="section" style="padding-top:0">
+  <div class="sec-kicker reveal">// 03 · 5-Year Build Plan</div>
+  <h2 class="sec-h2 reveal">$20 → $250,000+<br>The System Funds Itself</h2>
+  <p class="sec-sub reveal">Starting on paper trades and Google Colab. At $500–1000 portfolio, trading returns cover API costs. At $5,000, the system launches as a Signal SaaS. At $50,000, it's fully autonomous.</p>
+
+  <div style="overflow-x:auto;margin-bottom:32px" class="reveal">
+    <table class="roadmap-table">
+      <thead><tr><th>Phase</th><th>Timeline</th><th>Starting Capital</th><th>Target</th><th>Monthly Return</th><th>Key Milestone</th></tr></thead>
+      <tbody>
+        <tr><td><span class="period">Foundation</span></td><td>Wk 3–4</td><td>Paper</td><td>Paper</td><td>—</td><td>Mini-Council on BTC · Oxford format validated</td></tr>
+        <tr><td><span class="period">Full Council</span></td><td>Month 2</td><td>Paper</td><td>Paper</td><td>—</td><td>7-member debate + Memory Agent + Devil's Advocate</td></tr>
+        <tr><td><span class="period">Wealth Manager</span></td><td>Month 3</td><td>Paper</td><td>Paper</td><td>—</td><td>Pre/post market cycle · Multi-legend portfolio blend</td></tr>
+        <tr><td><span class="period">Multi-Market</span></td><td>Month 4–5</td><td>Paper</td><td>Paper</td><td>—</td><td>NSE (Zerodha) + ASX (IBKR) · 30-day paper validation</td></tr>
+        <tr><td><span class="period">Go/No-Go</span></td><td>Month 6</td><td>$20</td><td>$20</td><td>—</td><td>Sharpe ≥1.5 required · Security audit · Board sign-off</td></tr>
+        <tr><td><span class="period">Live Trading</span></td><td>Month 7+</td><td class="highlight">$20</td><td class="highlight">$200–500</td><td>25–40%</td><td>First live trade · KuCoin + Alpaca live</td></tr>
+        <tr><td><span class="period">Year 2</span></td><td>12–24 mo</td><td class="highlight">$500</td><td class="highlight">$5,000</td><td>15–20%</td><td>NSE + ASX live · Signal SaaS launched</td></tr>
+        <tr><td><span class="period">Year 3</span></td><td>24–36 mo</td><td class="highlight">$5,000</td><td class="highlight">$50,000</td><td>10–15%</td><td>Agent funds own compute costs</td></tr>
+        <tr><td><span class="period">Year 4</span></td><td>36–48 mo</td><td class="highlight">$50,000</td><td class="highlight">$150,000</td><td>8–12%</td><td>Full signal SaaS revenue stream</td></tr>
+        <tr><td><span class="period">Year 5</span></td><td>48–60 mo</td><td class="highlight">$150,000</td><td class="highlight">$250,000+</td><td>8–10%</td><td>Full autonomous operation · Self-funding system</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Costs -->
+<section class="section" style="padding-top:0">
+  <div class="sec-kicker reveal">// 04 · Operating Budget</div>
+  <h2 class="sec-h2 reveal">$13–17 per Month.<br>The Cheapest Research Team.</h2>
+  <div class="cost-grid reveal">
+    <div class="cost-card">
+      <div class="cost-title">Monthly Operating Cost</div>
+      <div class="cost-item">
+        <div>
+          <div class="cost-label">Claude Sonnet API (40 calls/day × 30)</div>
+          <div class="cost-bar-wrap"><div class="cost-bar" style="width:80%;background:var(--gold)"></div></div>
+        </div>
+        <div class="cost-val">$10–14</div>
+      </div>
+      <div class="cost-item">
+        <div>
+          <div class="cost-label">Railway hosting (post-Colab migration)</div>
+          <div class="cost-bar-wrap"><div class="cost-bar" style="width:35%;background:#3B82F6"></div></div>
+        </div>
+        <div class="cost-val">$5</div>
+      </div>
+      <div class="cost-item" style="border-bottom:none">
+        <div>
+          <div class="cost-label">Supabase · GitHub Actions · Exchange APIs</div>
+          <div class="cost-bar-wrap"><div class="cost-bar" style="width:0%;background:var(--text3)"></div></div>
+        </div>
+        <div class="cost-val" style="color:var(--green)">$0</div>
+      </div>
+      <div class="total-val">$13–17</div>
+      <div class="total-sub">per month total operating cost</div>
+    </div>
+    <div class="cost-card">
+      <div class="cost-title">Annual Cost Projection</div>
+      <div class="cost-item">
+        <div><div class="cost-label">Year 1 — free tier + API only</div><div style="font-size:11px;color:var(--text3);margin-top:3px">~$14/mo average on free tiers</div></div>
+        <div class="cost-val">$120–168</div>
+      </div>
+      <div class="cost-item">
+        <div><div class="cost-label">Year 2 — upgrade compute from revenue</div><div style="font-size:11px;color:var(--text3);margin-top:3px">RunPod GPU added for local LLM option</div></div>
+        <div class="cost-val">$240–360</div>
+      </div>
+      <div class="cost-item" style="border-bottom:none">
+        <div><div class="cost-label">Year 3 — premium infrastructure</div><div style="font-size:11px;color:var(--text3);margin-top:3px">Fully funded by trading revenue</div></div>
+        <div class="cost-val">$600–900</div>
+      </div>
+      <div style="margin-top:24px;padding:20px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:10px">
+        <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">Self-Funding Milestone</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">Once portfolio reaches ~$500–1,000, monthly trading returns cover API costs entirely. The Council pays for itself. Revenue compounds into compute, compute compounds into returns.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tech Stack -->
+<section class="section" style="padding-top:0">
+  <div class="sec-kicker reveal">// 05 · Technology Stack</div>
+  <h2 class="sec-h2 reveal" style="margin-bottom:40px">Built Lean.<br>Scales with Revenue.</h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border2);border-radius:16px;overflow:hidden" class="reveal">
+    <div style="background:var(--bg2);padding:24px">
+      <div style="font-size:9px;color:var(--text3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;font-weight:600">Orchestration</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">CrewAI + LangGraph</div>
+      <div style="font-size:11px;color:var(--text3)">Multi-agent workflow + state management</div>
+    </div>
+    <div style="background:var(--bg2);padding:24px">
+      <div style="font-size:9px;color:var(--text3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;font-weight:600">LLM Engine</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">Claude Sonnet 4.6</div>
+      <div style="font-size:11px;color:var(--text3)">All 8 council agents + reasoning</div>
+    </div>
+    <div style="background:var(--bg2);padding:24px">
+      <div style="font-size:9px;color:var(--text3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;font-weight:600">Memory / RAG</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">Supabase pgvector</div>
+      <div style="font-size:11px;color:var(--text3)">Decision history + institutional knowledge</div>
+    </div>
+    <div style="background:var(--bg2);padding:24px">
+      <div style="font-size:9px;color:var(--text3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;font-weight:600">Execution</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">KuCoin · Alpaca · Zerodha</div>
+      <div style="font-size:11px;color:var(--text3)">Crypto + US equities + NSE live trading</div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Council OS</div>
+      <div class="footer-sub">Personal AI Trading System · Paddhu's Ventures Inc · 5-Year Primary Revenue Project</div>
+    </div>
+    <div class="footer-links">
+      <a href="index.html" class="footer-link">← PaddhuLabs Hub</a>
+      <a href="audit-platform.html" class="footer-link">Audit Platform</a>
+      <a href="voiceiq.html" class="footer-link">VoiceIQ</a>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script>
+// Cursor
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let cx=0,cy=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;});
+(function ac(){rx+=(cx-rx)*0.1;ry+=(cy-ry)*0.1;cursor.style.left=cx+'px';cursor.style.top=cy+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ac);})();
+document.querySelectorAll('a,.council-member,.protocol-card,.price-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='60px';ring.style.height='60px';});
+  el.addEventListener('mouseleave',()=>{ring.style.width='40px';ring.style.height='40px';});
+});
+
+// Three.js — Orbital rings + golden galaxy
+const canvas=document.getElementById('bg-canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,500);
+camera.position.set(0,15,40);
+camera.lookAt(0,0,0);
+
+function mkTex(c){
+  const cv=document.createElement('canvas');cv.width=cv.height=32;
+  const ctx=cv.getContext('2d');
+  const g=ctx.createRadialGradient(16,16,0,16,16,16);
+  g.addColorStop(0,c+'ff');g.addColorStop(0.4,c+'88');g.addColorStop(1,c+'00');
+  ctx.fillStyle=g;ctx.fillRect(0,0,32,32);
+  return new THREE.CanvasTexture(cv);
+}
+
+// Golden particle disk (financial data representation)
+const N=7000;
+const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+const goldPalette=[[0.96,0.62,0.04],[0.85,0.47,0.02],[0.06,0.73,0.51],[0.96,0.83,0.3]];
+for(let i=0;i<N;i++){
+  const i3=i*3;
+  const r=Math.pow(Math.random(),0.5)*45;
+  const theta=Math.random()*Math.PI*2;
+  const tilt=(Math.random()-.5)*0.15;
+  pos[i3]=Math.cos(theta)*r+(Math.random()-.5)*1.5;
+  pos[i3+1]=(Math.random()-.5)*3+tilt*r;
+  pos[i3+2]=Math.sin(theta)*r+(Math.random()-.5)*1.5;
+  const [cr,cg,cb]=goldPalette[Math.floor(Math.random()*goldPalette.length)];
+  const fade=1-r/45;
+  col[i3]=cr*fade;col[i3+1]=cg*fade;col[i3+2]=cb*fade*0.5;
+}
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const mat=new THREE.PointsMaterial({size:0.5,map:mkTex('#F59E0B'),vertexColors:true,transparent:true,alphaMap:mkTex('#ffffff'),depthWrite:false,blending:THREE.AdditiveBlending});
+const disk=new THREE.Points(geo,mat);
+scene.add(disk);
+
+// 8 orbital rings — one per council member
+const ringColors=['#10B981','#EF4444','#F59E0B','#3B82F6','#9B7FD4','#4ABFCF','#DC2626','#F59E0B'];
+const ringRadii=[8,11,14,17,20,23,27,32];
+const ringsArr=[];
+ringColors.forEach((color,i)=>{
+  const g=new THREE.TorusGeometry(ringRadii[i],0.06,16,120);
+  const m=new THREE.MeshBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:i===7?0.35:0.18,blending:THREE.AdditiveBlending,depthWrite:false});
+  const ring=new THREE.Mesh(g,m);
+  ring.rotation.x=Math.PI/2+(Math.random()-.5)*0.3;
+  ring.rotation.z=(Math.random()-.5)*0.2;
+  ring.userData={speed:0.008+i*0.003*(Math.random()<.5?1:-1),color};
+  scene.add(ring);
+  ringsArr.push(ring);
+});
+
+// Council "planets" — glowing spheres on each ring
+ringsArr.forEach((ring,i)=>{
+  const sg=new THREE.SphereGeometry(0.35,12,12);
+  const sm=new THREE.MeshBasicMaterial({color:new THREE.Color(ring.userData.color),transparent:true,opacity:0.9,blending:THREE.AdditiveBlending});
+  const sphere=new THREE.Mesh(sg,sm);
+  sphere.userData={ring,angle:Math.random()*Math.PI*2,radius:ringRadii[i]};
+  scene.add(sphere);
+});
+
+// Central glow (Buffett)
+const cg=new THREE.SphereGeometry(2,24,24);
+const cm=new THREE.MeshBasicMaterial({color:new THREE.Color('#F59E0B'),transparent:true,opacity:0.6,blending:THREE.AdditiveBlending});
+scene.add(new THREE.Mesh(cg,cm));
+const cg2=new THREE.SphereGeometry(3.5,16,16);
+const cm2=new THREE.MeshBasicMaterial({color:new THREE.Color('#F59E0B'),transparent:true,opacity:0.15,blending:THREE.AdditiveBlending});
+scene.add(new THREE.Mesh(cg2,cm2));
+
+let mx=0,my=0,tmx=0,tmy=0,scrollY=0;
+document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5);my=(e.clientY/window.innerHeight-.5);});
+window.addEventListener('scroll',()=>{scrollY=window.scrollY;});
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+
+const clock=new THREE.Clock();
+// Get all spheres
+const orbiters=scene.children.filter(c=>c.type==='Mesh'&&c.userData.ring);
+(function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  tmx+=(mx-tmx)*0.04;tmy+=(my-tmy)*0.04;
+
+  disk.rotation.y=t*0.02+tmx*0.2;
+  disk.rotation.x=0.2+tmy*0.1+scrollY*0.0002;
+
+  ringsArr.forEach((r,i)=>{
+    r.rotation.z+=r.userData.speed;
+    r.rotation.x=Math.PI/2+(Math.sin(t*0.05+i)*0.15)+tmy*0.05;
+  });
+
+  orbiters.forEach(s=>{
+    s.userData.angle+=0.008+s.userData.radius*0.0002;
+    const rx=s.userData.ring.rotation;
+    s.position.x=Math.cos(s.userData.angle)*s.userData.radius;
+    s.position.y=Math.sin(s.userData.angle)*0.1;
+    s.position.z=Math.sin(s.userData.angle)*s.userData.radius;
+  });
+
+  camera.position.x=tmx*4;
+  camera.position.y=15-tmy*3+scrollY*0.005;
+  camera.position.z=40+Math.sin(t*0.1)*2;
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+})();
+
+// Scroll reveal
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});},{threshold:0.07,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+// Stagger council cards
+document.querySelectorAll('.council-member,.agent-ov').forEach((el,i)=>{
+  el.style.opacity='0';el.style.transform='translateY(30px)';
+  el.style.transition=`opacity 0.6s ease ${i*0.08}s,transform 0.6s ease ${i*0.08}s`;
+});
+const cardObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';}});},{threshold:0.05});
+document.querySelectorAll('.council-member,.agent-ov').forEach(el=>cardObs.observe(el));
+</script>
+</body>
+</html>
